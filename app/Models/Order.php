@@ -7,7 +7,7 @@ use Carbon\Carbon;
 
 class Order extends Model
 {
-    protected $fillable = ['user_id', 'total', 'status', 'beneficiary_number', 'network'];
+    protected $fillable = ['user_id', 'total', 'status', 'beneficiary_number', 'network', 'reference_id'];
     
     protected $casts = [
         'created_at' => 'datetime:Y-m-d H:i:s',

@@ -14,14 +14,30 @@ use App\Services\OrderPusherService;
 class OrdersController extends Controller
 {
     // Display a listing of the user's orders
-    public function index()
+    public function index(Request $request)
     {
+        $userId = Auth::id();
+        
         $orders = Order::with(['products' => function($query) {
             $query->withPivot('quantity', 'price', 'beneficiary_number');
-        }])->where('user_id', Auth::id())->latest()->get();
+        }])->where('user_id', $userId);
+
+        // Search by order ID
+        if ($request->has('order_id') && $request->input('order_id') !== '') {
+            $orders->where('id', $request->input('order_id'));
+        }
+
+        // Search by beneficiary number
+        if ($request->has('beneficiary_number') && $request->input('beneficiary_number') !== '') {
+            $orders->where('beneficiary_number', 'like', '%' . $request->input('beneficiary_number') . '%');
+        }
+
+        $orders = $orders->latest()->get();
 
         return Inertia::render('Dashboard/orders', [
-            'orders' => $orders
+            'orders' => $orders,
+            'searchOrderId' => $request->input('order_id', ''),
+            'searchBeneficiaryNumber' => $request->input('beneficiary_number', '')
         ]);
     }
 

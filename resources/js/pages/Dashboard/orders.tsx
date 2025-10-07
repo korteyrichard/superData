@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 
 interface Product {
   id: number;
@@ -26,13 +26,17 @@ interface Order {
 interface OrdersPageProps {
   orders: Order[];
   auth: any;
+  searchOrderId: string;
+  searchBeneficiaryNumber: string;
   [key: string]: any;
 }
 
 export default function OrdersPage() {
-  const { orders, auth } = usePage<OrdersPageProps>().props;
+  const { orders, auth, searchOrderId, searchBeneficiaryNumber } = usePage<OrdersPageProps>().props;
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [networkFilter, setNetworkFilter] = useState('');
+  const [orderIdSearch, setOrderIdSearch] = useState(searchOrderId);
+  const [beneficiarySearch, setBeneficiarySearch] = useState(searchBeneficiaryNumber);
 
   // Extract unique networks for filter dropdown
   const networks = Array.from(new Set(orders.map(o => o.network).filter(Boolean)));
@@ -44,6 +48,8 @@ export default function OrdersPage() {
   const handleExpand = (orderId: number) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
+
+
 
   const getNetworkColor = (network?: string) => {
     if (!network) return '';
@@ -57,18 +63,55 @@ export default function OrdersPage() {
     <DashboardLayout user={auth?.user} header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">My Orders</h2>}>
       <Head title="Orders" />
       <div className="py-8 max-w-4xl mx-auto">
-        <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <label className="font-medium">Filter by Network:</label>
-          <select
-            className="border rounded px-3 py-2 w-full sm:w-60"
-            value={networkFilter}
-            onChange={e => setNetworkFilter(e.target.value)}
-          >
-            <option value="">All Networks</option>
-            {networks.map(network => (
-              <option key={network} value={network}>{network}</option>
-            ))}
-          </select>
+        {/* Search and Filter Section */}
+        <div className="mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search by Order ID</label>
+              <input
+                type="text"
+                className="w-full border rounded-lg px-3 py-2 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                placeholder="Enter order ID"
+                value={orderIdSearch}
+                onChange={e => {
+                  setOrderIdSearch(e.target.value);
+                  router.get(route('dashboard.orders'), {
+                    order_id: e.target.value,
+                    beneficiary_number: beneficiarySearch
+                  }, { preserveState: true, replace: true });
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search by Beneficiary Number</label>
+              <input
+                type="text"
+                className="w-full border rounded-lg px-3 py-2 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                placeholder="Enter beneficiary number"
+                value={beneficiarySearch}
+                onChange={e => {
+                  setBeneficiarySearch(e.target.value);
+                  router.get(route('dashboard.orders'), {
+                    order_id: orderIdSearch,
+                    beneficiary_number: e.target.value
+                  }, { preserveState: true, replace: true });
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter by Network</label>
+              <select
+                className="w-full border rounded-lg px-3 py-2 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                value={networkFilter}
+                onChange={e => setNetworkFilter(e.target.value)}
+              >
+                <option value="">All Networks</option>
+                {networks.map(network => (
+                  <option key={network} value={network}>{network}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
         {filteredOrders.length === 0 ? (
           <div>No orders found.</div>

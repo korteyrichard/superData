@@ -13,6 +13,9 @@ interface Transaction {
 
 interface TransactionsPageProps extends PageProps {
   transactions?: Transaction[];
+  todaysSales?: number;
+  allTimeSales?: number;
+  todaysTopup?: number;
 }
 
 const typeLabels: Record<string, string> = {
@@ -26,7 +29,7 @@ const typeColors: Record<string, string> = {
 };
 
 export default function Transactions({ auth }: TransactionsPageProps) {
-  const { transactions = [] } = usePage<TransactionsPageProps>().props;
+  const { transactions = [], todaysSales = 0, allTimeSales = 0, todaysTopup = 0 } = usePage<TransactionsPageProps>().props;
   const [filter, setFilter] = useState<string>('all');
 
   const filteredTransactions =
@@ -45,6 +48,22 @@ export default function Transactions({ auth }: TransactionsPageProps) {
 
       <div className="py-12 bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-screen">
         <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Today's Sales</h3>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">GHC {todaysSales.toLocaleString()}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">All Time Sales</h3>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">GHC {allTimeSales.toLocaleString()}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Today's Topup</h3>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-2">GHC {todaysTopup.toLocaleString()}</p>
+            </div>
+          </div>
+          
           <div className="bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-6 sm:p-8 border border-gray-100 dark:border-gray-800">
 
             {/* Filter Buttons */}

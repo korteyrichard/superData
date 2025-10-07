@@ -31,6 +31,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard/joinUs', [JoinUsController::class, 'index'])->name('dashboard.joinUs');
     Route::get('/dashboard/orders', [OrdersController::class, 'index'])->name('dashboard.orders');
     Route::get('/dashboard/transactions', [TransactionsController::class, 'index'])->name('dashboard.transactions');
+    Route::get('/dashboard/api-docs', [\App\Http\Controllers\ApiDocsController::class, 'index'])->name('dashboard.api-docs');
+    Route::post('/api/generate-key', [\App\Http\Controllers\ApiDocsController::class, 'generateApiKey'])->name('api.docs.generate-key');
     
     // Cart routes
     Route::post('/add-to-cart', [CartController::class, 'store'])->name('add.to.cart');
@@ -40,6 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Wallet balance route
     Route::post('/dashboard/wallet/add', [DashboardController::class, 'addToWallet'])->name('dashboard.wallet.add');
     Route::get('/wallet/callback', [DashboardController::class, 'handleWalletCallback'])->name('wallet.callback');
+    Route::post('/dashboard/wallet/verify', [WalletController::class, 'verifyPayment'])->name('dashboard.wallet.verify');
 
     // ❌ REMOVED THE DUPLICATE ADMIN ROUTE FROM HERE
     // Route::get('/admin/dashboard', [\App\Http\Controllers\AdminDashboardController::class, 'index'])->name('admin.dashboard');
@@ -71,6 +74,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->name('admin.')->group(fun
     Route::get('admin/transactions', [\App\Http\Controllers\AdminDashboardController::class, 'transactions'])->name('transactions');
     Route::get('admin/users/{user}/transactions', [\App\Http\Controllers\AdminDashboardController::class, 'userTransactions'])->name('users.transactions');
     Route::post('admin/orders/export', [\App\Http\Controllers\AdminDashboardController::class, 'exportOrders'])->name('orders.export');
+    Route::post('admin/api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleApi'])->name('api.toggle');
 });
 
 // Paystack payment routes

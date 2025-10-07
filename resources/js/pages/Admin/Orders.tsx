@@ -49,6 +49,8 @@ interface AdminOrdersPageProps {
   auth: any;
   filterNetwork: string;
   filterStatus: string;
+  searchOrderId: string;
+  searchBeneficiaryNumber: string;
   [key: string]: any;
 }
 
@@ -58,11 +60,15 @@ export default function AdminOrders() {
     auth,
     filterNetwork: initialNetworkFilter,
     filterStatus: initialStatusFilter,
+    searchOrderId,
+    searchBeneficiaryNumber,
   } = usePage<AdminOrdersPageProps>().props;
 
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [networkFilter, setNetworkFilter] = useState(initialNetworkFilter);
   const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
+  const [orderIdSearch, setOrderIdSearch] = useState(searchOrderId);
+  const [beneficiarySearch, setBeneficiarySearch] = useState(searchBeneficiaryNumber);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [bulkStatus, setBulkStatus] = useState('');
 
@@ -77,6 +83,8 @@ export default function AdminOrders() {
     setStatusFilter(newFilters.status);
     router.get(route('admin.orders'), newFilters, { preserveState: true, replace: true });
   };
+
+
 
   const handleExpand = (orderId: number) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -204,35 +212,72 @@ export default function AdminOrders() {
           </div>
         )}
 
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-8">
-          <div className="flex flex-col gap-1 w-full md:w-1/2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Network</label>
-            <select
-              className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
-              value={networkFilter}
-              onChange={(e) => handleFilterChange('network', e.target.value)}
-            >
-              <option value="">All Networks</option>
-              {networks.map(network => (
-                <option key={network} value={network}>{network}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1 w-full md:w-1/2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Status</label>
-            <select
-              className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
-              value={statusFilter}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-            >
-              <option value="">All Statuses</option>
+        {/* Search and Filters */}
+        <div className="mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search by Order ID</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
+                placeholder="Enter order ID"
+                value={orderIdSearch}
+                onChange={e => {
+                  setOrderIdSearch(e.target.value);
+                  router.get(route('admin.orders'), {
+                    network: networkFilter,
+                    status: statusFilter,
+                    order_id: e.target.value,
+                    beneficiary_number: beneficiarySearch
+                  }, { preserveState: true, replace: true });
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search by Beneficiary Number</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
+                placeholder="Enter beneficiary number"
+                value={beneficiarySearch}
+                onChange={e => {
+                  setBeneficiarySearch(e.target.value);
+                  router.get(route('admin.orders'), {
+                    network: networkFilter,
+                    status: statusFilter,
+                    order_id: orderIdSearch,
+                    beneficiary_number: e.target.value
+                  }, { preserveState: true, replace: true });
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter by Network</label>
+              <select
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
+                value={networkFilter}
+                onChange={(e) => handleFilterChange('network', e.target.value)}
+              >
+                <option value="">All Networks</option>
+                {networks.map(network => (
+                  <option key={network} value={network}>{network}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter by Status</label>
+              <select
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
+                value={statusFilter}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+              >
+                <option value="">All Statuses</option>
                 <option value="pending">Pending</option>
                 <option value="processing">Processing</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
-            </select>
+              </select>
+            </div>
           </div>
         </div>
 

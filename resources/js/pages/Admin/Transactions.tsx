@@ -50,11 +50,15 @@ const typeLabels: Record<string, string> = {
   order: 'Order Purchase',
   agent_fee: 'Agent Fee',
   refund: 'Refund',
+  credit: 'Admin Credit',
+  debit: 'Admin Debit',
 };
 
 const typeColors: Record<string, string> = {
   topup: 'bg-green-100 text-green-800',
   order: 'bg-blue-100 text-blue-800',
+  credit: 'bg-emerald-100 text-emerald-800',
+  debit: 'bg-red-100 text-red-800',
 };
 
 export default function AdminTransactions() {
@@ -83,6 +87,8 @@ export default function AdminTransactions() {
             <option value="order">Order Purchases</option>
             <option value="agent_fee">Agent Fees</option>
             <option value="refund">Refunds</option>
+            <option value="credit">Admin Credits</option>
+            <option value="debit">Admin Debits</option>
           </select>
         </div>
         {transactions.data.length === 0 ? (

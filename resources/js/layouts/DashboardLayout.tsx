@@ -37,13 +37,21 @@ interface NavigationItem {
 export default function DashboardLayout({ user, header, children }: DashboardLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    const navigation: NavigationItem[] = [
+    const baseNavigation: NavigationItem[] = [
         { name: 'Dashboard', href: route('dashboard'), icon: 'LayoutDashboard', current: route().current('dashboard') },
         { name: 'Wallet', href: route('dashboard.wallet'), icon: 'Wallet', current: route().current('dashboard.wallet') },
         { name: 'Join Us', href: route('dashboard.joinUs'), icon: 'Contact', current: route().current('dashboard.joinUs') },
         { name: 'Orders', href: route('dashboard.orders'), icon: 'Package', current: route().current('dashboard.orders') },
         { name: 'Transactions', href: route('dashboard.transactions'), icon: 'Receipt', current: route().current('dashboard.transactions') },
-        { name: 'Settings', href: route('profile.edit'), icon: 'Settings', current: route().current('profile.edit') || route().current('password.edit') || route().current('appearance') },
+    ];
+
+    const apiDocsItem: NavigationItem = { name: 'API Docs', href: route('dashboard.api-docs'), icon: 'Code', current: route().current('dashboard.api-docs') };
+    const settingsItem: NavigationItem = { name: 'Settings', href: route('profile.edit'), icon: 'Settings', current: route().current('profile.edit') || route().current('password.edit') || route().current('appearance') };
+
+    const navigation: NavigationItem[] = [
+        ...baseNavigation,
+        ...(user.role === 'agent' || user.role === 'admin' ? [apiDocsItem] : []),
+        settingsItem,
     ];
 
    

@@ -10,6 +10,7 @@ interface Transaction {
   status: string;
   type: string;
   description: string;
+  reference: string;
   created_at: string;
 }
 
@@ -46,6 +47,7 @@ export default function Wallet({ auth, transactions }: WalletPageProps) {
       const [addAmount, setAddAmount] = useState('');
       const [isAdding, setIsAdding] = useState(false);
       const [addError, setAddError] = useState<string | null>(null);
+      const [verifyingTx, setVerifyingTx] = useState<number | null>(null);
 
 
 
@@ -53,6 +55,32 @@ export default function Wallet({ auth, transactions }: WalletPageProps) {
 
   const handleTopUp = () => {
     router.visit('/dashboard/wallet/add');
+  };
+
+  const handleVerifyPayment = async (reference: string, txId: number) => {
+    setVerifyingTx(txId);
+    try {
+      const response = await fetch('/dashboard/wallet/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        },
+        body: JSON.stringify({ reference }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        router.reload();
+      } else {
+        alert(data.message || 'Verification failed');
+      }
+    } catch (err) {
+      alert('Error verifying payment');
+    } finally {
+      setVerifyingTx(null);
+    }
   };
 
   const user = auth.user;
@@ -158,7 +186,7 @@ export default function Wallet({ auth, transactions }: WalletPageProps) {
         {/* Transactions Table */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
           <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">
-            Wallet Top-up History
+            Wallet Transaction History
           </h3>
 
           <div className="w-full overflow-x-auto">
@@ -166,29 +194,62 @@ export default function Wallet({ auth, transactions }: WalletPageProps) {
               <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200">
                 <tr>
                   <th className="p-3 border whitespace-nowrap">ID</th>
+                  <th className="p-3 border whitespace-nowrap">Type</th>
                   <th className="p-3 border whitespace-nowrap">Amount</th>
                   <th className="p-3 border whitespace-nowrap">Status</th>
                   <th className="p-3 border whitespace-nowrap">Date</th>
+                  <th className="p-3 border whitespace-nowrap">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.data.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="p-4 text-center text-gray-500 dark:text-gray-400"
                     >
-                      No wallet top-up transactions found.
+                      No wallet transactions found.
                     </td>
                   </tr>
                 ) : (
                   transactions.data.map((tx) => (
                     <tr key={tx.id} className="border-t dark:border-gray-700">
                       <td className="p-3 border">{tx.id}</td>
+                      <td className="p-3 border">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          tx.type === 'topup' ? 'bg-blue-100 text-blue-800' :
+                          tx.type === 'credit' ? 'bg-green-100 text-green-800' :
+                          tx.type === 'debit' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {tx.type === 'topup' ? 'Top Up' :
+                           tx.type === 'credit' ? 'Credit' :
+                           tx.type === 'debit' ? 'Debit' : tx.type}
+                        </span>
+                      </td>
                       <td className="p-3 border">GHS {Number(tx.amount).toFixed(2)}</td>
-                      <td className="p-3 border">{tx.status}</td>
+                      <td className="p-3 border">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          tx.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          tx.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {tx.status}
+                        </span>
+                      </td>
                       <td className="p-3 border">
                         {new Date(tx.created_at).toLocaleString()}
+                      </td>
+                      <td className="p-3 border">
+                        {tx.status === 'pending' && tx.reference && (
+                          <button
+                            onClick={() => handleVerifyPayment(tx.reference, tx.id)}
+                            disabled={verifyingTx === tx.id}
+                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-1 rounded text-xs"
+                          >
+                            {verifyingTx === tx.id ? 'Verifying...' : 'Verify'}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))

@@ -19,27 +19,12 @@ class RoleMiddleware
         }
 
         $user = auth()->user();
+        $allowedRoles = explode(',', $role);
 
-        // Debug: Log the role check
-        \Log::info('Role check', [
-            'required_role' => $role,
-            'user_role' => $user->role,
-            'user_id' => $user->id,
-            'user_email' => $user->email
-        ]);
-
-        // Check if user has the required role
-        if (empty($user->role) || $user->role !== $role) {
-            \Log::warning('Access denied - insufficient role', [
-                'required_role' => $role,
-                'user_role' => $user->role ?? 'NULL',
-                'user_id' => $user->id
-            ]);
-            
-            abort(403, 'Access denied. You need "' . $role . '" role to access this page.');
+        // Check if user has any of the required roles
+        if (empty($user->role) || !in_array($user->role, $allowedRoles)) {
+            abort(403, 'Access denied. You need one of these roles: ' . implode(', ', $allowedRoles));
         }
-
-        \Log::info('Role check passed', ['user_id' => $user->id, 'role' => $role]);
 
         return $next($request);
     }

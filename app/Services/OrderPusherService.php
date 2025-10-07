@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -13,6 +14,14 @@ class OrderPusherService
 
     public function pushOrderToApi(Order $order)
     {
+        // Check if API is enabled
+        $apiEnabled = Setting::get('api_enabled', 'true') === 'true';
+        
+        if (!$apiEnabled) {
+            Log::info('API is disabled, skipping order push', ['order_id' => $order->id]);
+            return;
+        }
+        
         Log::info('Processing order for API push', ['order_id' => $order->id]);
         
         $items = $order->products()->withPivot('quantity', 'price', 'beneficiary_number')->get();
@@ -65,6 +74,19 @@ class OrderPusherService
                     'status_code' => $response->status(),
                     'body' => $response->body()
                 ]);
+
+                // Save transaction ID from response
+                if ($response->successful()) {
+                    $responseData = $response->json();
+                    $transactionId = $responseData['transaction_id'] ?? $responseData['data']['transaction_id'] ?? null;
+                    if ($transactionId) {
+                        $order->update(['reference_id' => $transactionId]);
+                        Log::info('Transaction ID saved', [
+                            'order_id' => $order->id,
+                            'transaction_id' => $transactionId
+                        ]);
+                    }
+                }
 
             } catch (\Exception $e) {
                 Log::error('API Error', ['message' => $e->getMessage()]);

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\Transaction;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\SmsService;
@@ -40,6 +41,7 @@ class AdminDashboardController extends Controller
             'todayUsers' => $todayUsers,
             'todayOrders' => $todayOrders,
             'todayTransactions' => $todayTransactions,
+            'apiEnabled' => Setting::get('api_enabled', 'true') === 'true',
         ]);
     }
 
@@ -115,10 +117,22 @@ class AdminDashboardController extends Controller
             $orders->where('status', $request->input('status'));
         }
 
+        // Search by order ID
+        if ($request->has('order_id') && $request->input('order_id') !== '') {
+            $orders->where('id', $request->input('order_id'));
+        }
+
+        // Search by beneficiary number
+        if ($request->has('beneficiary_number') && $request->input('beneficiary_number') !== '') {
+            $orders->where('beneficiary_number', 'like', '%' . $request->input('beneficiary_number') . '%');
+        }
+
         return Inertia::render('Admin/Orders', [
             'orders' => $orders->paginate(10),
             'filterNetwork' => $request->input('network', ''),
             'filterStatus' => $request->input('status', ''),
+            'searchOrderId' => $request->input('order_id', ''),
+            'searchBeneficiaryNumber' => $request->input('beneficiary_number', '')
         ]);
     }
 
@@ -316,6 +330,16 @@ class AdminDashboardController extends Controller
 
         $user->increment('wallet_balance', $request->amount);
 
+        // Create transaction record
+        Transaction::create([
+            'user_id' => $user->id,
+            'order_id' => null,
+            'amount' => $request->amount,
+            'status' => 'completed',
+            'type' => 'credit',
+            'description' => 'Admin wallet credit of GHS ' . number_format($request->amount, 2),
+        ]);
+
         return redirect()->route('admin.users')->with('success', 'Wallet credited successfully.');
     }
 
@@ -333,6 +357,16 @@ class AdminDashboardController extends Controller
         }
 
         $user->decrement('wallet_balance', $request->amount);
+
+        // Create transaction record
+        Transaction::create([
+            'user_id' => $user->id,
+            'order_id' => null,
+            'amount' => $request->amount,
+            'status' => 'completed',
+            'type' => 'debit',
+            'description' => 'Admin wallet debit of GHS ' . number_format($request->amount, 2),
+        ]);
 
         return redirect()->route('admin.users')->with('success', 'Wallet debited successfully.');
     }
@@ -459,5 +493,19 @@ class AdminDashboardController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Toggle API status.
+     */
+    public function toggleApi(Request $request)
+    {
+        $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        Setting::set('api_enabled', $request->enabled ? 'true' : 'false');
+
+        return redirect()->back()->with('success', 'API status updated successfully.');
     }
 }
