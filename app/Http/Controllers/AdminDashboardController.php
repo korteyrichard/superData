@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Order;
 use App\Models\Transaction;
 use App\Models\Setting;
+use App\Models\Alert;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\SmsService;
@@ -507,5 +508,63 @@ class AdminDashboardController extends Controller
         Setting::set('api_enabled', $request->enabled ? 'true' : 'false');
 
         return redirect()->back()->with('success', 'API status updated successfully.');
+    }
+
+    /**
+     * Display alerts management page.
+     */
+    public function alerts()
+    {
+        $alerts = Alert::latest()->get();
+        return Inertia::render('Admin/Alerts', [
+            'alerts' => $alerts
+        ]);
+    }
+
+    /**
+     * Store a new alert.
+     */
+    public function storeAlert(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'type' => 'required|string|in:info,warning,success,error',
+            'expires_at' => 'nullable|date|after:now'
+        ]);
+
+        Alert::create($request->all());
+        return redirect()->back()->with('success', 'Alert created successfully.');
+    }
+
+    /**
+     * Update an alert.
+     */
+    public function updateAlert(Request $request, Alert $alert)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'type' => 'required|string|in:info,warning,success,error',
+            'is_active' => 'boolean',
+            'expires_at' => 'nullable|date|after:now'
+        ]);
+
+        $data = $request->all();
+        if (empty($data['expires_at'])) {
+            $data['expires_at'] = null;
+        }
+        
+        $alert->update($data);
+        return redirect()->back()->with('success', 'Alert updated successfully.');
+    }
+
+    /**
+     * Delete an alert.
+     */
+    public function deleteAlert(Alert $alert)
+    {
+        $alert->delete();
+        return redirect()->back()->with('success', 'Alert deleted successfully.');
     }
 }

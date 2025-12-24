@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import TelecelCard from '../../components/TelecelCard';
 import ATCard from '../../components/ATCard';
 import MTNCard from '../../components/MTNCard';
+import AlertBanner from '../../components/AlertBanner';
 import { Icon } from '@/components/ui/icon';
 import { Link } from '@inertiajs/react';
 
@@ -27,6 +28,13 @@ interface Order {
   // ...other order fields as needed
 }
 
+interface Alert {
+  id: number;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+}
+
 interface CartItem {
   id: number;
   product_id: number;
@@ -45,11 +53,12 @@ interface DashboardProps extends PageProps {
   cartCount: number;
   cartItems: CartItem[];
   walletBalance: number;
-  orders: Order[]; // Add orders prop
+  orders: Order[];
+  alerts: Alert[];
 }
 
 export default function Dashboard({ auth }: DashboardProps) {
-  const { products, cartCount, cartItems, walletBalance: initialWalletBalance, orders } = usePage<DashboardProps>().props;
+  const { products, cartCount, cartItems, walletBalance: initialWalletBalance, orders, alerts } = usePage<DashboardProps>().props;
 
   const [walletBalance, setWalletBalance] = useState(initialWalletBalance ?? 0);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -145,6 +154,9 @@ export default function Dashboard({ auth }: DashboardProps) {
         </div>
       )}
 
+      {/* Alert Popup Overlay */}
+      <AlertBanner alerts={alerts || []} />
+      
       <div className="py-6 sm:py-8 lg:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Action Buttons Section */}

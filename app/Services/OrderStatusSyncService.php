@@ -13,7 +13,7 @@ class OrderStatusSyncService
 
     public function __construct()
     {
-        $this->jaybartApiKey = '';
+        $this->jaybartApiKey = env('ORDER_PUSHER_API_KEY', '');
         $this->moolreSmsService = new SmsService();
     }
 
@@ -144,6 +144,7 @@ class OrderStatusSyncService
             'successful' => 'completed',
             'completed' => 'completed',
             'delivered' => 'completed',
+            'placed' => 'processing',
             'processing' => 'processing',
             'pending' => 'processing',
             'failed' => 'cancelled',

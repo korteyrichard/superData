@@ -9,8 +9,14 @@ use Illuminate\Support\Facades\Log;
 
 class OrderPusherService
 {
-    private $baseUrl = 'YOUR BASE URL';
-    private $apiKey = 'YOUR API KEY';
+    private $baseUrl;
+    private $apiKey;
+
+    public function __construct()
+    {
+        $this->baseUrl = env('ORDER_PUSHER_BASE_URL', 'https://agent.jaybartservices.com/api/v1');
+        $this->apiKey = env('ORDER_PUSHER_API_KEY', '');
+    }
 
     public function pushOrderToApi(Order $order)
     {
@@ -19,6 +25,7 @@ class OrderPusherService
         
         if (!$apiEnabled) {
             Log::info('API is disabled, skipping order push', ['order_id' => $order->id]);
+            $order->update(['api_status' => 'disabled']);
             return;
         }
         
@@ -75,21 +82,53 @@ class OrderPusherService
                     'body' => $response->body()
                 ]);
 
-                // Save transaction ID from response
+                // Save transaction ID from response and update API status
                 if ($response->successful()) {
                     $responseData = $response->json();
-                    $transactionId = $responseData['transaction_id'] ?? $responseData['data']['transaction_id'] ?? null;
+                    Log::info('API Response Data', ['response_data' => $responseData]);
+                    
+                    // Try multiple possible paths for transaction ID
+                    $transactionId = $responseData['transaction_id'] ?? 
+                                   $responseData['transaction_code'] ?? 
+                                   $responseData['data']['transaction_id'] ?? 
+                                   $responseData['data']['transaction_code'] ?? 
+                                   $responseData['id'] ?? 
+                                   $responseData['data']['id'] ?? 
+                                   $responseData['reference'] ?? 
+                                   $responseData['data']['reference'] ?? null;
+                    
                     if ($transactionId) {
-                        $order->update(['reference_id' => $transactionId]);
+                        $order->update([
+                            'reference_id' => $transactionId,
+                            'api_status' => 'success'
+                        ]);
                         Log::info('Transaction ID saved', [
                             'order_id' => $order->id,
                             'transaction_id' => $transactionId
                         ]);
+                    } else {
+                        $order->update(['api_status' => 'success']);
+                        Log::warning('No transaction ID found in successful response', [
+                            'order_id' => $order->id,
+                            'response_data' => $responseData
+                        ]);
                     }
+                } else {
+                    $order->update(['api_status' => 'failed']);
+                    Log::error('API request failed', [
+                        'order_id' => $order->id,
+                        'status_code' => $response->status(),
+                        'response' => $response->body()
+                    ]);
                 }
 
             } catch (\Exception $e) {
-                Log::error('API Error', ['message' => $e->getMessage()]);
+                $order->update(['api_status' => 'failed']);
+                Log::error('API Error', [
+                    'order_id' => $order->id,
+                    'message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
             }
         }
     }

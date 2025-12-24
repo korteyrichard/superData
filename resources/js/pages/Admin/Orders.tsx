@@ -18,6 +18,7 @@ interface Order {
   id: number;
   total: number;
   status: string;
+  api_status: 'disabled' | 'success' | 'failed';
   created_at: string;
   network?: string;
   beneficiary_number?: string;
@@ -99,6 +100,15 @@ export default function AdminOrders() {
       'at (big packages)': 'bg-blue-100 text-blue-700',
     };
     return map[network.toLowerCase()] || 'bg-gray-200 text-gray-700';
+  };
+
+  const getApiStatusColor = (apiStatus: 'disabled' | 'success' | 'failed') => {
+    const map: Record<string, string> = {
+      disabled: 'bg-gray-100 text-gray-700',
+      success: 'bg-green-100 text-green-700',
+      failed: 'bg-red-100 text-red-700',
+    };
+    return map[apiStatus];
   };
 
   const handleDeleteOrder = (orderId: number) => {
@@ -304,6 +314,7 @@ export default function AdminOrders() {
                   <th className="px-3 sm:px-5 py-3 sm:py-4">Date</th>
                   <th className="px-3 sm:px-5 py-3 sm:py-4">Network</th>
                   <th className="px-3 sm:px-5 py-3 sm:py-4">Status</th>
+                  <th className="px-3 sm:px-5 py-3 sm:py-4">API Status</th>
                   <th className="px-3 sm:px-5 py-3 sm:py-4">Total</th>
                   <th className="px-3 sm:px-5 py-3 sm:py-4 text-right">Actions</th>
                 </tr>
@@ -344,6 +355,11 @@ export default function AdminOrders() {
                             <option value="cancelled">Cancelled</option>
                         </select>
                       </td>
+                      <td className="px-3 sm:px-5 py-3 sm:py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getApiStatusColor(order.api_status)}`}>
+                          {order.api_status.charAt(0).toUpperCase() + order.api_status.slice(1)}
+                        </span>
+                      </td>
                       <td className="px-3 sm:px-5 py-3 sm:py-4 font-semibold">${order.total}</td>
                       <td className="px-3 sm:px-5 py-3 sm:py-4 text-right space-x-2 sm:space-x-3">
                         <button
@@ -363,9 +379,12 @@ export default function AdminOrders() {
 
                     {expandedOrder === order.id && (
                       <tr className="bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
-                        <td colSpan={8} className="px-3 sm:px-6 py-4 sm:py-5">
+                        <td colSpan={9} className="px-3 sm:px-6 py-4 sm:py-5">
                           <div className="space-y-2 text-xs sm:text-sm">
                             <p><strong>Status:</strong> {order.status}</p>
+                            <p><strong>API Status:</strong> <span className={`px-2 py-1 rounded-full text-xs font-medium ${getApiStatusColor(order.api_status)}`}>
+                              {order.api_status.charAt(0).toUpperCase() + order.api_status.slice(1)}
+                            </span></p>
                             <p><strong>Products:</strong></p>
                             <ul className="list-disc pl-4 sm:pl-5 space-y-1">
                               {order.products.map((product) => (

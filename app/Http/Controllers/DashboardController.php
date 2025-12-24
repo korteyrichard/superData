@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Cart;
 use App\Models\Transaction;
 use App\Models\Order;
+use App\Models\Alert;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
@@ -41,12 +42,15 @@ class DashboardController extends Controller
             $walletBalance = $user->wallet_balance;
             $orders = Order::where('user_id', $user->id)->get();
         }
+        $alerts = Alert::active()->latest()->get();
+        
         return Inertia::render('Dashboard/dashboard', [
             'products' => $products,
             'cartCount' => $cartCount,
             'cartItems' => $cartItems,
             'walletBalance' => $walletBalance,
             'orders' => $orders,
+            'alerts' => $alerts,
         ]);
     }
 

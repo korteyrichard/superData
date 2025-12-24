@@ -89,17 +89,12 @@ class OrdersController extends Controller
 
             DB::commit();
 
-            // Push order to external API if enabled
-            $apiEnabled = Setting::get('api_enabled', 'true') === 'true';
-            if ($apiEnabled) {
-                try {
-                    $orderPusher = new OrderPusherService();
-                    $orderPusher->pushOrderToApi($order);
-                } catch (\Exception $e) {
-                    Log::error('Failed to push API order to external service', ['error' => $e->getMessage()]);
-                }
-            } else {
-                Log::info('API is disabled, skipping order push for API order', ['order_id' => $order->id]);
+            // Push order to external API
+            try {
+                $orderPusher = new OrderPusherService();
+                $orderPusher->pushOrderToApi($order);
+            } catch (\Exception $e) {
+                Log::error('Failed to push API order to external service', ['error' => $e->getMessage()]);
             }
 
             // Load order with relationships for response
