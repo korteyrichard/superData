@@ -20,42 +20,48 @@ export default function JoinUs({ auth }: PageProps) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* WhatsApp Card */}
-                        <div className="bg-green-50 dark:bg-green-900 p-6 rounded-lg shadow-md">
-                            <div className="flex items-center space-x-3 mb-4">
-                                <div className="bg-green-600 text-white p-2 rounded">
-                                    <FaWhatsapp className="w-6 h-6" />
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 p-8 rounded-xl shadow-lg border border-green-200 dark:border-green-700 hover:shadow-xl transition-all duration-300">
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-full shadow-lg">
+                                    <FaWhatsapp className="w-8 h-8" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                                    Whatsapp community
+                                <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+                                    WhatsApp Community
                                 </h3>
                             </div>
+                            <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                                Join our vibrant WhatsApp community to stay updated with the latest news, tips, and connect with other users.
+                            </p>
                             <a
                                 href="https://whatsapp.com/channel/0029VbBdG8d2ER6aWSFGSr28"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block mt-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-md font-medium"
+                                className="inline-flex items-center bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
                             >
-                                <span className="mr-1">↗</span> Join Whatsapp community
+                                <span className="mr-2">↗</span> Join WhatsApp Community
                             </a>
                         </div>
 
                         {/* Telegram Card */}
-                        <div className="bg-blue-50 dark:bg-blue-900 p-6 rounded-lg shadow-md">
-                            <div className="flex items-center space-x-3 mb-4">
-                                <div className="bg-blue-600 text-white p-2 rounded">
-                                    <FaTelegramPlane className="w-6 h-6" />
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-8 rounded-xl shadow-lg border border-blue-200 dark:border-blue-700 hover:shadow-xl transition-all duration-300">
+                            <div className="flex items-center space-x-4 mb-6">
+                                <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-full shadow-lg">
+                                    <FaTelegramPlane className="w-8 h-8" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                                    Watch Website tutorials (on telegram)
+                                <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+                                    Telegram Tutorials
                                 </h3>
                             </div>
+                            <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                                Access comprehensive video tutorials and step-by-step guides to master our platform.
+                            </p>
                             <a
                                 href="https://t.me/superdatagh"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium"
+                                className="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
                             >
-                                <span className="mr-1">↗</span> Join Watch Website tutorials (on telegram)
+                                <span className="mr-2">↗</span> Watch Tutorials
                             </a>
                         </div>
                     </div>

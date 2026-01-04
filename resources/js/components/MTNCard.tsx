@@ -41,6 +41,7 @@ interface ProductCardProps {
 const MTNCard: React.FC<ProductCardProps> = ({ productId, name, quantity, currency, expiry, network, price, cartItems }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [beneficiaryNumber, setBeneficiaryNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
 
   const handleAddToCart = () => {
@@ -58,6 +59,8 @@ const MTNCard: React.FC<ProductCardProps> = ({ productId, name, quantity, curren
       return;
     }
     
+    setIsLoading(true);
+    
     console.log(typeof quantity);
     console.log(quantity)
     router.post(route('add.to.cart'), {
@@ -68,9 +71,11 @@ const MTNCard: React.FC<ProductCardProps> = ({ productId, name, quantity, curren
       onSuccess: () => {
         setIsModalOpen(false);
         setBeneficiaryNumber('');
+        setIsLoading(false);
       },
       onError: (errors) => {
         console.error('Error adding to cart:', errors);
+        setIsLoading(false);
       }
     });
   };
@@ -135,8 +140,8 @@ const MTNCard: React.FC<ProductCardProps> = ({ productId, name, quantity, curren
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" onClick={handleAddToCart}>
-              Add To Cart
+            <Button type="submit" onClick={handleAddToCart} disabled={isLoading}>
+              {isLoading ? 'Adding...' : 'Add To Cart'}
             </Button>
           </DialogFooter>
         </DialogContent>

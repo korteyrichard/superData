@@ -28,6 +28,11 @@ interface Order {
     name: string;
     email: string;
   };
+  commission?: {
+    id: number;
+    amount: number;
+    status: string;
+  };
 }
 
 interface PaginatedOrders {
@@ -52,6 +57,8 @@ interface AdminOrdersPageProps {
   filterStatus: string;
   searchOrderId: string;
   searchBeneficiaryNumber: string;
+  dailySales: number;
+  dailyCommissions: number;
   [key: string]: any;
 }
 
@@ -63,6 +70,8 @@ export default function AdminOrders() {
     filterStatus: initialStatusFilter,
     searchOrderId,
     searchBeneficiaryNumber,
+    dailySales,
+    dailyCommissions,
   } = usePage<AdminOrdersPageProps>().props;
 
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
@@ -76,13 +85,16 @@ export default function AdminOrders() {
   const networks = Array.from(new Set(orders.data.map(o => o.network).filter(Boolean)));
 
   const handleFilterChange = (filterName: string, value: string) => {
-    const newFilters = {
-      network: filterName === 'network' ? value : networkFilter,
-      status: filterName === 'status' ? value : statusFilter,
-    };
-    setNetworkFilter(newFilters.network);
-    setStatusFilter(newFilters.status);
-    router.get(route('admin.orders'), newFilters, { preserveState: true, replace: true });
+    const params: Record<string, string | undefined> = {};
+    params[filterName] = value || undefined;
+    
+    if (filterName === 'network') {
+      setNetworkFilter(value);
+    } else if (filterName === 'status') {
+      setStatusFilter(value);
+    }
+    
+    router.get(route('admin.orders'), params, { preserveState: true, replace: true });
   };
 
 
@@ -162,6 +174,35 @@ export default function AdminOrders() {
     >
       <Head title="Admin Orders" />
       <div className="max-w-6xl mx-auto py-10 px-2 sm:px-4">
+        {/* Daily Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Daily Sales</p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">GHS {Number(dailySales || 0).toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-700 dark:text-green-300">Daily Commissions</p>
+                <p className="text-2xl font-bold text-green-900 dark:text-green-100">GHS {Number(dailyCommissions || 0).toFixed(2)}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
         {/* Bulk Actions */}
         {selectedOrders.length > 0 && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
@@ -235,10 +276,7 @@ export default function AdminOrders() {
                 onChange={e => {
                   setOrderIdSearch(e.target.value);
                   router.get(route('admin.orders'), {
-                    network: networkFilter,
-                    status: statusFilter,
-                    order_id: e.target.value,
-                    beneficiary_number: beneficiarySearch
+                    order_id: e.target.value || undefined
                   }, { preserveState: true, replace: true });
                 }}
               />
@@ -253,10 +291,7 @@ export default function AdminOrders() {
                 onChange={e => {
                   setBeneficiarySearch(e.target.value);
                   router.get(route('admin.orders'), {
-                    network: networkFilter,
-                    status: statusFilter,
-                    order_id: orderIdSearch,
-                    beneficiary_number: e.target.value
+                    beneficiary_number: e.target.value || undefined
                   }, { preserveState: true, replace: true });
                 }}
               />
@@ -316,6 +351,7 @@ export default function AdminOrders() {
                   <th className="px-3 sm:px-5 py-3 sm:py-4">Status</th>
                   <th className="px-3 sm:px-5 py-3 sm:py-4">API Status</th>
                   <th className="px-3 sm:px-5 py-3 sm:py-4">Total</th>
+                  <th className="px-3 sm:px-5 py-3 sm:py-4">Commission</th>
                   <th className="px-3 sm:px-5 py-3 sm:py-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -338,7 +374,12 @@ export default function AdminOrders() {
                           <div className="text-gray-500 text-xs">{order.user.email}</div>
                         </div>
                       </td>
-                      <td className="px-3 sm:px-5 py-3 sm:py-4 whitespace-nowrap">{new Date(order.created_at).toLocaleString()}</td>
+                      <td className="px-3 sm:px-5 py-3 sm:py-4">
+                        <div className="text-sm">
+                          <div className="font-medium">{new Date(order.created_at).toLocaleDateString()}</div>
+                          <div className="text-gray-500 text-xs">{new Date(order.created_at).toLocaleTimeString()}</div>
+                        </div>
+                      </td>
                       <td className={`px-3 sm:px-5 py-3 sm:py-4 rounded ${getNetworkColor(order.network)} font-medium`}>
                         {order.network || '-'}
                       </td>
@@ -360,7 +401,10 @@ export default function AdminOrders() {
                           {order.api_status.charAt(0).toUpperCase() + order.api_status.slice(1)}
                         </span>
                       </td>
-                      <td className="px-3 sm:px-5 py-3 sm:py-4 font-semibold">${order.total}</td>
+                      <td className="px-3 sm:px-5 py-3 sm:py-4 font-semibold">GHS {order.total}</td>
+                      <td className="px-3 sm:px-5 py-3 sm:py-4 font-semibold">
+                        {order.commission ? `GHS ${order.commission.amount}` : '-'}
+                      </td>
                       <td className="px-3 sm:px-5 py-3 sm:py-4 text-right space-x-2 sm:space-x-3">
                         <button
                           onClick={() => handleExpand(order.id)}
@@ -379,7 +423,7 @@ export default function AdminOrders() {
 
                     {expandedOrder === order.id && (
                       <tr className="bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
-                        <td colSpan={9} className="px-3 sm:px-6 py-4 sm:py-5">
+                        <td colSpan={10} className="px-3 sm:px-6 py-4 sm:py-5">
                           <div className="space-y-2 text-xs sm:text-sm">
                             <p><strong>Status:</strong> {order.status}</p>
                             <p><strong>API Status:</strong> <span className={`px-2 py-1 rounded-full text-xs font-medium ${getApiStatusColor(order.api_status)}`}>
@@ -389,7 +433,7 @@ export default function AdminOrders() {
                             <ul className="list-disc pl-4 sm:pl-5 space-y-1">
                               {order.products.map((product) => (
                                 <li key={product.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
-                                  <span>{product.name} - ${product.pivot.price}</span>
+                                  <span>{product.name} - GHS {product.pivot.price}</span>
                                   <span className="text-xs text-gray-600 dark:text-gray-400">
                                     Beneficiary: {product.pivot.beneficiary_number || '-'}
                                   </span>

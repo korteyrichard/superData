@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\Product;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,12 +19,38 @@ class CartController extends Controller
         ]);
 
         $user = Auth::user();
+        $beneficiaryNumber = $request->beneficiary_number;
+        
+        // Check if beneficiary number already exists in cart
+        $existingCartItem = Cart::where('user_id', $user->id)
+            ->where('beneficiary_number', $beneficiaryNumber)
+            ->first();
+            
+        if ($existingCartItem) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'An item for this beneficiary number is already in your cart']);
+            }
+            return redirect()->back()->with('error', 'An item for this beneficiary number is already in your cart');
+        }
+        
+        // Check if there's an existing order with processing status for this beneficiary number
+        $processingOrder = Order::where('user_id', $user->id)
+            ->where('beneficiary_number', $beneficiaryNumber)
+            ->where('status', 'processing')
+            ->first();
+            
+        if ($processingOrder) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'There is already an order to the same beneficiary number with status processing']);
+            }
+            return redirect()->back()->with('error', 'There is already an order to the same beneficiary number with status processing');
+        }
         
         Cart::create([
             'user_id' => $user->id,
             'product_id' => $request->product_id,
             'quantity' => $request->quantity,
-            'beneficiary_number' => $request->beneficiary_number,
+            'beneficiary_number' => $beneficiaryNumber,
         ]);
 
         if ($request->expectsJson()) {

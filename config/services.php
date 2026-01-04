@@ -40,4 +40,9 @@ return [
         'sender_id' => env('BULKCLIX_SENDER_ID'),
     ],
 
+    'paystack' => [
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+    ],
+
 ];

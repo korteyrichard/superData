@@ -13,8 +13,8 @@ class ApiDocsController extends Controller
     {
         $user = Auth::user();
         
-        if (!in_array($user->role, ['agent', 'admin'])) {
-            abort(403, 'Access denied. Only agents and admins can access API documentation.');
+        if (!in_array($user->role, ['agent', 'dealer', 'admin'])) {
+            abort(403, 'Access denied. Only agents, dealers and admins can access API documentation.');
         }
         
         $agentProducts = \App\Models\Product::where('product_type', 'agent_product')

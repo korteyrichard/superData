@@ -20,7 +20,10 @@ interface DashboardLayoutProps extends PropsWithChildren {
         id: number;
         name: string;
         email: string;
-        role: string; // Added role here
+        role: string;
+        agent_shop?: {
+            username: string;
+        };
     };
     header?: React.ReactNode;
 }
@@ -43,6 +46,15 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
         { name: 'Join Us', href: route('dashboard.joinUs'), icon: 'Contact', current: route().current('dashboard.joinUs') },
         { name: 'Orders', href: route('dashboard.orders'), icon: 'Package', current: route().current('dashboard.orders') },
         { name: 'Transactions', href: route('dashboard.transactions'), icon: 'Receipt', current: route().current('dashboard.transactions') },
+        { name: 'Terms', href: route('dashboard.terms'), icon: 'FileText', current: route().current('dashboard.terms') },
+    ];
+
+    const dealerNavigation: NavigationItem[] = [
+        { name: 'Dealer Dashboard', href: '/dealer/dashboard', icon: 'Store', current: window.location.pathname === '/dealer/dashboard' },
+        { name: 'Commissions', href: '/dealer/commissions', icon: 'DollarSign', current: window.location.pathname === '/dealer/commissions' },
+        { name: 'Withdrawals', href: '/dealer/withdrawals', icon: 'CreditCard', current: window.location.pathname === '/dealer/withdrawals' },
+        { name: 'Referrals', href: '/dealer/referrals', icon: 'Users', current: window.location.pathname === '/dealer/referrals' },
+        { name: 'My Shop', href: `/shop/${user.agent_shop?.username || ''}`, icon: 'ShoppingBag', current: false },
     ];
 
     const apiDocsItem: NavigationItem = { name: 'API Docs', href: route('dashboard.api-docs'), icon: 'Code', current: route().current('dashboard.api-docs') };
@@ -50,15 +62,14 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
 
     const navigation: NavigationItem[] = [
         ...baseNavigation,
-        ...(user.role === 'agent' || user.role === 'admin' ? [apiDocsItem] : []),
+        ...(user.role === 'dealer' ? dealerNavigation : []),
+        ...(user.role === 'dealer' || user.role === 'admin' ? [apiDocsItem] : []),
         settingsItem,
     ];
 
    
 
-    const bottomNavigation: NavigationItem[] = [
-        { name: 'Log Out', href: route('logout'), icon: 'LogOut', current: false },
-    ];
+   
 
     const renderNavigationItems = (items: NavigationItem[], closeSidebar = false) => {
         return items.map((item) => (
@@ -69,8 +80,8 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
                 as={item.name === 'Log Out' ? 'button' : 'a'}
                 className={`
                     ${item.current
-                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                        ? 'bg-white/20 text-white font-semibold shadow-lg'
+                        : 'text-cyan-100 hover:bg-white/10 hover:text-white'
                     }
                     group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full
                 `}
@@ -83,10 +94,10 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
     };
 
     const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
-        <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 pt-5 pb-4 overflow-y-auto h-full">
+        <div className="flex flex-col flex-grow bg-gradient-to-b from-cyan-600 to-blue-700 dark:from-cyan-700 dark:to-blue-800 pt-5 pb-4 overflow-y-auto h-full">
             <div className="flex items-center flex-shrink-0 px-4">
                 <Link href="/">
-                    <div className="text-gray-500 text-2xl font-bold">
+                    <div className="text-white text-2xl font-bold drop-shadow-lg">
                         {isMobile ? 'superData' : 'SupaData'}
                     </div>
                 </Link>
@@ -95,20 +106,13 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
                 <div className="px-2 space-y-1">
                     {renderNavigationItems(navigation, isMobile)}
                 </div>
-                <Link href={route('logout')} method="post" as="button" className="w-full ml-3 text-left absolute bottom-0 px-2 py-2 text-sm font-bold rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">
-                     Log out
-                </Link>
-                <a href='https://wa.me/message/VGH6FJR76ONGK1'   className="w-[200px] ml-3 text-left mt-10 px-2 py-2 text-sm font-bold rounded-md text-gray-600 bg-green-500 dark:text-gray-300 hover:bg-green-600 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white ">
+                
+                <a href='https://wa.me/message/VGH6FJR76ONGK1' className="w-[200px] ml-3 text-left mt-10 px-2 py-2 text-sm font-bold rounded-md text-white bg-green-500 hover:bg-green-600 shadow-lg">
                      Contact Support
                 </a>
 
 
-                {/* Bottom Navigation (e.g., Logout) */}
-                <div className="mt-auto">
-                    <div className="px-2 space-y-1">
-                        {renderNavigationItems(bottomNavigation, isMobile)}
-                    </div>
-                </div>
+               
             </nav>
         </div>
     );
@@ -125,7 +129,7 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
             {/* Main content area */}
             <div className="lg:pl-64 flex flex-col flex-1">
                 {/* Navbar */}
-                <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white dark:bg-gray-800 shadow-sm lg:shadow-none">
+                <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-gradient-to-r from-cyan-600 to-blue-700 dark:from-cyan-700 dark:to-blue-800 shadow-lg">
                     <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                         <SheetTrigger asChild>
                             <div className="flex items-center px-4 lg:hidden">
@@ -133,7 +137,7 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                                    className="text-white hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/20"
                                 >
                                     <span className="sr-only">Open sidebar</span>
                                     <Icon name="Menu" className="h-6 w-6" />
@@ -148,7 +152,7 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
                     <div className="flex-1 flex justify-between px-4">
                         <div className="flex-1 flex items-center">
                             {header && (
-                                <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                                <h2 className="font-semibold text-xl text-white drop-shadow-lg leading-tight">
                                     {header}
                                 </h2>
                             )}
@@ -156,15 +160,15 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
                         <div className="ml-4 flex items-center md:ml-6">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                                        <Icon name="User" className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+                                    <Button variant="ghost" className="relative h-8 w-8 rounded-full hover:bg-white/10">
+                                        <Icon name="User" className="h-6 w-6 text-white" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className="w-56" align="end" forceMount>
                                     <DropdownMenuLabel className="font-normal">
                                         <div className="flex flex-col space-y-1">
-                                            <p className="text-sm font-medium leading-none">{user.name}</p>
-                                            <p className="text-xs leading-none text-muted-foreground">
+                                            <p className="text-sm font-medium leading-none text-gray-900 dark:text-white">{user.name}</p>
+                                            <p className="text-xs leading-none text-gray-600 dark:text-gray-300">
                                                 {user.email}
                                             </p>
                                         </div>
@@ -186,7 +190,7 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
                     </div>
                 </div>
 
-                <main className="flex-1 p-4">
+                <main className="flex-1 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 min-h-screen">
                     {children}
                 </main>
             </div>

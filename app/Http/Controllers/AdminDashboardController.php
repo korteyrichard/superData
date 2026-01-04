@@ -20,28 +20,29 @@ class AdminDashboardController extends Controller
      */
     public function index()
     {
-        $users = User::all();
-        $products = Product::all();
-        $orders = Order::with(['products' => function($query) {
-            $query->withPivot('quantity', 'price', 'beneficiary_number');
-        }])->get();
-        $transactions = Transaction::all();
+        $userCount = User::count();
+        $productCount = Product::count();
+        $orderCount = Order::count();
+        $transactionCount = Transaction::count();
 
         $today = now()->today();
-        $todayUsers = User::whereDate('created_at', $today)->get();
-        $todayOrders = Order::with(['products' => function($query) {
-            $query->withPivot('quantity', 'price', 'beneficiary_number');
-        }])->whereDate('created_at', $today)->get();
-        $todayTransactions = Transaction::whereDate('created_at', $today)->get();
+        $todayUserCount = User::whereDate('created_at', $today)->count();
+        $todayOrderCount = Order::whereDate('created_at', $today)->count();
+        $todayTransactionCount = Transaction::whereDate('created_at', $today)->count();
+        
+        $todayRevenue = Order::whereDate('created_at', $today)->sum('total') ?: 0;
+        $totalRevenue = Order::sum('total') ?: 0;
 
         return Inertia::render('Admin/Dashboard', [
-            'users' => $users,
-            'products' => $products,
-            'orders' => $orders,
-            'transactions' => $transactions,
-            'todayUsers' => $todayUsers,
-            'todayOrders' => $todayOrders,
-            'todayTransactions' => $todayTransactions,
+            'userCount' => $userCount,
+            'productCount' => $productCount,
+            'orderCount' => $orderCount,
+            'transactionCount' => $transactionCount,
+            'todayUserCount' => $todayUserCount,
+            'todayOrderCount' => $todayOrderCount,
+            'todayTransactionCount' => $todayTransactionCount,
+            'todayRevenue' => $todayRevenue,
+            'totalRevenue' => $totalRevenue,
             'apiEnabled' => Setting::get('api_enabled', 'true') === 'true',
         ]);
     }
@@ -67,6 +68,7 @@ class AdminDashboardController extends Controller
         $totalUsers = User::count();
         $customerCount = User::where('role', 'customer')->count();
         $agentCount = User::where('role', 'agent')->count();
+        $dealerCount = User::where('role', 'dealer')->count();
         $adminCount = User::where('role', 'admin')->count();
         $totalWalletBalance = User::sum('wallet_balance');
 
@@ -78,6 +80,7 @@ class AdminDashboardController extends Controller
                 'total' => $totalUsers,
                 'customers' => $customerCount,
                 'agents' => $agentCount,
+                'dealers' => $dealerCount,
                 'admins' => $adminCount,
                 'totalWalletBalance' => $totalWalletBalance,
             ],
@@ -108,7 +111,7 @@ class AdminDashboardController extends Controller
     {
         $orders = Order::with(['products' => function($query) {
             $query->withPivot('quantity', 'price', 'beneficiary_number');
-        }, 'user'])->latest();
+        }, 'user', 'commission'])->latest();
 
         if ($request->has('network') && $request->input('network') !== '') {
             $orders->where('network', 'like', '%' . $request->input('network') . '%');
@@ -128,13 +131,72 @@ class AdminDashboardController extends Controller
             $orders->where('beneficiary_number', 'like', '%' . $request->input('beneficiary_number') . '%');
         }
 
+        // Calculate daily totals
+        $today = now()->today();
+        $dailySales = Order::whereDate('created_at', $today)->sum('total');
+        $dailyCommissions = \App\Models\Commission::whereDate('created_at', $today)->sum('amount');
+
         return Inertia::render('Admin/Orders', [
-            'orders' => $orders->paginate(10),
+            'orders' => $orders->paginate(50),
             'filterNetwork' => $request->input('network', ''),
             'filterStatus' => $request->input('status', ''),
             'searchOrderId' => $request->input('order_id', ''),
-            'searchBeneficiaryNumber' => $request->input('beneficiary_number', '')
+            'searchBeneficiaryNumber' => $request->input('beneficiary_number', ''),
+            'dailySales' => $dailySales,
+            'dailyCommissions' => $dailyCommissions
         ]);
+    }
+
+    /**
+     * Display commissions management page.
+     */
+    public function commissions(Request $request)
+    {
+        $commissions = \App\Models\Commission::with(['agent', 'order'])->latest();
+
+        if ($request->has('status') && $request->input('status') !== '') {
+            $commissions->where('status', $request->input('status'));
+        }
+
+        if ($request->has('agent_id') && $request->input('agent_id') !== '') {
+            $commissions->where('agent_id', $request->input('agent_id'));
+        }
+
+        // Calculate total available commissions
+        $totalAvailableCommissions = \App\Models\Commission::where('status', 'available')->sum('amount');
+
+        return Inertia::render('Admin/Commissions', [
+            'commissions' => $commissions->paginate(20),
+            'filterStatus' => $request->input('status', ''),
+            'filterAgentId' => $request->input('agent_id', ''),
+            'agents' => User::whereIn('role', ['agent', 'dealer'])->get(['id', 'name', 'email']),
+            'totalAvailableCommissions' => $totalAvailableCommissions
+        ]);
+    }
+
+    /**
+     * Update commission status to available.
+     */
+    public function makeCommissionAvailable(\App\Models\Commission $commission)
+    {
+        if ($commission->status !== 'pending') {
+            return redirect()->back()->with('error', 'Only pending commissions can be made available');
+        }
+
+        $commission->update([
+            'status' => 'available',
+            'available_at' => now()
+        ]);
+
+        // Also update any related referral commissions
+        \App\Models\ReferralCommission::where('commission_id', $commission->id)
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'available',
+                'available_at' => now()
+            ]);
+
+        return redirect()->back()->with('success', 'Commission made available for withdrawal');
     }
 
     /**
@@ -281,7 +343,7 @@ class AdminDashboardController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'role' => 'required|string|in:customer,agent,admin',
+            'role' => 'required|string|in:customer,agent,dealer,admin',
         ]);
 
         User::create([
@@ -300,7 +362,7 @@ class AdminDashboardController extends Controller
     public function updateUserRole(Request $request, User $user)
     {
         $request->validate([
-            'role' => 'required|string|in:customer,agent,admin',
+            'role' => 'required|string|in:customer,agent,dealer,admin',
         ]);
 
         $user->update([
@@ -385,7 +447,7 @@ class AdminDashboardController extends Controller
             'status'=>'required|string|max:255',
             'quantity' => 'required|string|max:255',
             'price' => 'required|numeric',
-            'product_type' => 'required|string|in:agent_product,customer_product',
+            'product_type' => 'required|string|in:agent_product,customer_product,dealer_product',
         ]);
 
         Product::create([
@@ -415,7 +477,7 @@ class AdminDashboardController extends Controller
             'status'=>'required|string|max:255',
             'quantity' => 'required|string|max:255',
             'price' => 'required|numeric',
-            'product_type' => 'required|string|in:agent_product,customer_product',
+            'product_type' => 'required|string|in:agent_product,customer_product,dealer_product',
         ]);
 
         $product->update([

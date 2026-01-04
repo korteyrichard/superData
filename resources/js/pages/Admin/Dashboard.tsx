@@ -25,13 +25,15 @@ interface Transaction {
 }
 
 interface AdminDashboardProps extends PageProps {
-  users: User[];
-  products: Product[];
-  orders: Order[];
-  transactions: Transaction[];
-  todayUsers: User[];
-  todayOrders: Order[];
-  todayTransactions: Transaction[];
+  userCount: number;
+  productCount: number;
+  orderCount: number;
+  transactionCount: number;
+  todayUserCount: number;
+  todayOrderCount: number;
+  todayTransactionCount: number;
+  todayRevenue: number;
+  totalRevenue: number;
   apiEnabled: boolean;
 }
 
@@ -43,13 +45,15 @@ const StatCard = ({ title, value }: { title: string; value: number | string }) =
 );
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
-  users,
-  products,
-  orders,
-  transactions,
-  todayUsers,
-  todayOrders,
-  todayTransactions,
+  userCount,
+  productCount,
+  orderCount,
+  transactionCount,
+  todayUserCount,
+  todayOrderCount,
+  todayTransactionCount,
+  todayRevenue,
+  totalRevenue,
   apiEnabled,
 }) => {
   const { auth } = usePage<AdminDashboardProps>().props;
@@ -83,10 +87,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <section>
           <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Overall Summary</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard title="Total Users" value={users.length} />
-            <StatCard title="Total Products" value={products.length} />
-            <StatCard title="Total Orders" value={orders.length} />
-            <StatCard title="Total Transactions" value={transactions.length} />
+            <StatCard title="Total Users" value={userCount} />
+            <StatCard title="Total Products" value={productCount} />
+            <StatCard title="Total Orders" value={orderCount} />
+            <StatCard title="Total Transactions" value={transactionCount} />
+          </div>
+        </section>
+
+        {/* Revenue Section */}
+        <section>
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Revenue Overview</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <StatCard title="Today's Revenue" value={`GHS ${Number(todayRevenue || 0).toFixed(2)}`} />
+            <StatCard title="Total Revenue" value={`GHS ${Number(totalRevenue || 0).toFixed(2)}`} />
           </div>
         </section>
 
@@ -94,9 +107,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <section>
           <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Today's Statistics</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <StatCard title="New Users Today" value={todayUsers.length} />
-            <StatCard title="Orders Today" value={todayOrders.length} />
-            <StatCard title="Transactions Today" value={todayTransactions.length} />
+            <StatCard title="New Users Today" value={todayUserCount} />
+            <StatCard title="Orders Today" value={todayOrderCount} />
+            <StatCard title="Transactions Today" value={todayTransactionCount} />
           </div>
         </section>
 

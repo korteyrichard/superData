@@ -41,6 +41,7 @@ interface ProductCardProps {
 const ATCard: React.FC<ProductCardProps> = ({ productId, name, quantity, currency, expiry, network, price, cartItems }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [beneficiaryNumber, setBeneficiaryNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAddToCart = () => {
     // Validate phone number format
@@ -57,6 +58,8 @@ const ATCard: React.FC<ProductCardProps> = ({ productId, name, quantity, currenc
       return;
     }
     
+    setIsLoading(true);
+    
     router.post(route('add.to.cart'), {
       product_id: productId,
       quantity: quantity,
@@ -65,9 +68,11 @@ const ATCard: React.FC<ProductCardProps> = ({ productId, name, quantity, currenc
       onSuccess: () => {
         setIsModalOpen(false);
         setBeneficiaryNumber('');
+        setIsLoading(false);
       },
       onError: (errors) => {
         console.error('Error adding to cart:', errors);
+        setIsLoading(false);
       }
     });
   };
@@ -132,8 +137,8 @@ const ATCard: React.FC<ProductCardProps> = ({ productId, name, quantity, currenc
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" onClick={handleAddToCart}>
-              Add To Cart
+            <Button type="submit" onClick={handleAddToCart} disabled={isLoading}>
+              {isLoading ? 'Adding...' : 'Add To Cart'}
             </Button>
           </DialogFooter>
         </DialogContent>

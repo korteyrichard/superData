@@ -22,7 +22,7 @@ class DashboardController extends Controller
         $user = auth()->user();
         
         // Filter products based on user role and stock status
-        if ($user->isAgent() || $user->isAdmin()) {
+        if ($user->isAgent() || $user->isDealer() || $user->isAdmin()) {
             $products = Product::where('product_type', 'agent_product')
                               ->where('status', 'IN STOCK')
                               ->get();
@@ -55,6 +55,11 @@ class DashboardController extends Controller
     }
 
 
+
+    public function terms()
+    {
+        return Inertia::render('Dashboard/Terms');
+    }
 
     public function viewCart()
     {

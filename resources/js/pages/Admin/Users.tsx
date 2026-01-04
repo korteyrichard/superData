@@ -43,6 +43,7 @@ interface UsersPageProps extends PageProps {
     total: number;
     customers: number;
     agents: number;
+    dealers: number;
     admins: number;
     totalWalletBalance: number;
   };
@@ -113,6 +114,16 @@ const UsersPage = ({ auth, users, filterEmail, filterRole, userStats }: UsersPag
         
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Dealers</h3>
+            <div className="p-2 bg-purple-50 dark:bg-purple-900 rounded-lg">
+              <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{userStats.dealers}</p>
+        </div>
+        
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Admins</h3>
             <div className="p-2 bg-red-50 dark:bg-red-900 rounded-lg">
               <Shield className="w-4 h-4 text-red-600 dark:text-red-400" />
@@ -165,6 +176,7 @@ const UsersPage = ({ auth, users, filterEmail, filterRole, userStats }: UsersPag
               <option value="">All Roles</option>
               <option value="customer">Customer</option>
               <option value="agent">Agent</option>
+              <option value="dealer">Dealer</option>
               <option value="admin">Admin</option>
             </select>
           </div>

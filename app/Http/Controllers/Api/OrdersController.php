@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Transaction;
 use App\Services\OrderPusherService;
+use App\Services\CommissionService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,12 +23,13 @@ class OrdersController extends Controller
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|string|max:10',
             'beneficiary_number' => 'required|string|regex:/^[0-9+\-\s]+$/|max:20',
+            'agent_id' => 'nullable|exists:users,id' // Optional agent ID for commission tracking
         ]);
 
         $user = $request->user();
         
-        if (!in_array($user->role, ['agent', 'admin'])) {
-            return $this->errorResponse('Only agents and admins can create orders via API', 403);
+        if (!in_array($user->role, ['agent', 'dealer', 'admin'])) {
+            return $this->errorResponse('Only agents, dealers and admins can create orders via API', 403);
         }
         
         $product = Product::where('id', $request->product_id)
@@ -67,6 +69,7 @@ class OrdersController extends Controller
                 'total' => $totalPrice,
                 'beneficiary_number' => $request->beneficiary_number,
                 'network' => $product->network,
+                'agent_id' => $request->agent_id, // Store agent ID if provided
             ]);
 
             // Attach product to the order
@@ -86,6 +89,13 @@ class OrdersController extends Controller
                 'description' => 'API Order placed for ' . $product->network . ' - ' . $product->name,
                 'reference' => 'API-' . $order->id . '-' . time(),
             ]);
+
+            // Create commission if agent is involved
+            if ($request->agent_id) {
+                $order->load('agent.agentShop.agentProducts');
+                $commissionService = new CommissionService();
+                $commissionService->calculateAndCreateCommission($order);
+            }
 
             DB::commit();
 
@@ -144,8 +154,8 @@ class OrdersController extends Controller
     {
         $user = $request->user();
         
-        if (!in_array($user->role, ['agent', 'admin'])) {
-            return $this->errorResponse('Only agents and admins can access products via API', 403);
+        if (!in_array($user->role, ['agent', 'dealer', 'admin'])) {
+            return $this->errorResponse('Only agents, dealers and admins can access products via API', 403);
         }
         
         $products = Product::where('status', 'IN STOCK')

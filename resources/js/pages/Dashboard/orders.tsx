@@ -76,8 +76,7 @@ export default function OrdersPage() {
                 onChange={e => {
                   setOrderIdSearch(e.target.value);
                   router.get(route('dashboard.orders'), {
-                    order_id: e.target.value,
-                    beneficiary_number: beneficiarySearch
+                    order_id: e.target.value || undefined
                   }, { preserveState: true, replace: true });
                 }}
               />
@@ -92,8 +91,7 @@ export default function OrdersPage() {
                 onChange={e => {
                   setBeneficiarySearch(e.target.value);
                   router.get(route('dashboard.orders'), {
-                    order_id: orderIdSearch,
-                    beneficiary_number: e.target.value
+                    beneficiary_number: e.target.value || undefined
                   }, { preserveState: true, replace: true });
                 }}
               />

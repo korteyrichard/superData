@@ -12,7 +12,7 @@ interface Product {
   status: 'IN STOCK' | 'OUT OF STOCK';
   price: number;
   description?: string;
-  product_type: 'agent_product' | 'customer_product';
+  product_type: 'agent_product' | 'customer_product' | 'dealer_product';
 }
 
 interface AdminProductsProps extends PageProps {
@@ -38,7 +38,7 @@ export default function AdminProducts({
     network: '',
     status: 'IN STOCK' as 'IN STOCK' | 'OUT OF STOCK',
     price: '',
-    product_type: 'customer_product' as 'agent_product' | 'customer_product',
+    product_type: 'customer_product' as 'agent_product' | 'customer_product' | 'dealer_product',
   });
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,9 +151,12 @@ export default function AdminProducts({
                       <td className="px-2 sm:px-6 py-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">{product.network}</td>
                       <td className="px-2 sm:px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          product.product_type === 'agent_product' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                          product.product_type === 'agent_product' ? 'bg-purple-100 text-purple-800' : 
+                          product.product_type === 'dealer_product' ? 'bg-green-100 text-green-800' : 
+                          'bg-blue-100 text-blue-800'
                         }`}>
-                          {product.product_type === 'agent_product' ? 'Agent' : 'Customer'}
+                          {product.product_type === 'agent_product' ? 'Agent' : 
+                           product.product_type === 'dealer_product' ? 'Dealer' : 'Customer'}
                         </span>
                       </td>
                       <td className="px-2 sm:px-6 py-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">{product.price}</td>
@@ -298,11 +301,12 @@ export default function AdminProducts({
                 <select
                   id="product_type"
                   value={data.product_type}
-                  onChange={(e) => setData('product_type', e.target.value as 'agent_product' | 'customer_product')}
+                  onChange={(e) => setData('product_type', e.target.value as 'agent_product' | 'customer_product' | 'dealer_product')}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                   <option value="customer_product">Customer Product</option>
                   <option value="agent_product">Agent Product</option>
+                  <option value="dealer_product">Dealer Product</option>
                 </select>
                 {errors.product_type && <p className="text-red-500 text-xs mt-1">{errors.product_type}</p>}
               </div>
@@ -443,11 +447,12 @@ export default function AdminProducts({
                 <select
                   id="edit-product_type"
                   value={data.product_type}
-                  onChange={(e) => setData('product_type', e.target.value as 'agent_product' | 'customer_product')}
+                  onChange={(e) => setData('product_type', e.target.value as 'agent_product' | 'customer_product' | 'dealer_product')}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                   <option value="customer_product">Customer Product</option>
                   <option value="agent_product">Agent Product</option>
+                  <option value="dealer_product">Dealer Product</option>
                 </select>
                 {errors.product_type && <p className="text-red-500 text-xs mt-1">{errors.product_type}</p>}
               </div>

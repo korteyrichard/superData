@@ -1,0 +1,329 @@
+import DashboardLayout from '../../layouts/DashboardLayout';
+import { Head, useForm } from '@inertiajs/react';
+import { PageProps } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useState } from 'react';
+
+interface DashboardStats {
+    total_commissions: number;
+    available_commissions: number;
+    pending_commissions: number;
+    total_referrals: number;
+    referral_earnings: number;
+}
+
+interface Product {
+    id: number;
+    name: string;
+    price: number;
+    network: string;
+    status: string;
+}
+
+interface AgentProduct {
+    id: number;
+    agent_price: number;
+    product: Product;
+}
+
+interface AgentDashboardProps extends PageProps {
+    dashboardData: DashboardStats;
+    agentProducts: AgentProduct[];
+    availableProducts: Product[];
+    shopUrl: string;
+}
+
+export default function AgentDashboard({ auth, dashboardData, agentProducts, availableProducts, shopUrl }: AgentDashboardProps) {
+    const [selectedProduct, setSelectedProduct] = useState('');
+    const [agentPrice, setAgentPrice] = useState('');
+    const [copied, setCopied] = useState(false);
+    
+    const { delete: destroy, processing } = useForm();
+
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(shopUrl);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+        }
+    };
+
+    const shareShop = async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'My Shop',
+                    text: 'Check out my shop for great deals!',
+                    url: shopUrl,
+                });
+            } catch (err) {
+                console.error('Error sharing: ', err);
+            }
+        } else {
+            copyToClipboard();
+        }
+    };
+
+    const handleAddProduct = (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!selectedProduct || !agentPrice) {
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('product_id', selectedProduct);
+        formData.append('agent_price', agentPrice);
+        
+        fetch('/dealer/products', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                setSelectedProduct('');
+                setAgentPrice('');
+                window.location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    };
+
+    const handleRemoveProduct = (productId: number) => {
+        destroy(`/dealer/products/${productId}`);
+    };
+    return (
+        <DashboardLayout
+            user={auth.user}
+            header={
+                <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                    Dealer Dashboard
+                </h2>
+            }
+        >
+            <Head title="Dealer Dashboard" />
+
+            <div className="py-12">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                    {/* Welcome Message */}
+                    <Card>
+                        <CardContent className="pt-6">
+                            <h3 className="text-lg font-semibold mb-2">Welcome back, {auth.user.name}!</h3>
+                            <p className="text-gray-600">Here's an overview of your dealer performance.</p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Shop URL Section */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Your Shop URL</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                <div className="flex items-center space-x-2">
+                                    <Input 
+                                        value={shopUrl} 
+                                        readOnly 
+                                        className="flex-1"
+                                    />
+                                    <Button 
+                                        onClick={copyToClipboard}
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        {copied ? 'Copied!' : 'Copy'}
+                                    </Button>
+                                    <Button 
+                                        onClick={shareShop}
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        Share
+                                    </Button>
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                    Share this link with customers so they can buy from your shop
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm font-medium text-gray-600">Total Earnings</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-blue-600">GHS {(Number(dashboardData?.total_commissions) || 0).toFixed(2)}</div>
+                                <p className="text-xs text-gray-500 mt-1">Sales + referrals</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-xs font-medium text-gray-600">Available Balance</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-green-600">GHS {(Number(dashboardData?.available_commissions) || 0).toFixed(2)}</div>
+                                <p className="text-xs text-gray-500 mt-1">Ready to withdraw</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-xs font-medium text-gray-600">Sales Commissions</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-purple-600">GHS {(Number(dashboardData?.total_sales) || 0).toFixed(2)}</div>
+                                <p className="text-xs text-gray-500 mt-1">From product sales</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-xs font-medium text-gray-600">Referral Earnings</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-indigo-600">GHS {(Number(dashboardData?.referral_earnings) || 0).toFixed(2)}</div>
+                                <p className="text-xs text-gray-500 mt-1">{dashboardData?.total_referrals || 0} referrals</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Shop Products Management */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Add Product to Shop</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleAddProduct} className="space-y-4">
+                                    <div>
+                                        <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a product" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableProducts?.map((product) => (
+                                                    <SelectItem key={product.id} value={product.id.toString()}>
+                                                        {product.name} - GHS {product.price} ({product.network})
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {availableProducts?.length === 0 && (
+                                            <p className="text-sm text-gray-500 mt-1">No products available to add</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="Your selling price"
+                                            value={agentPrice}
+                                            onChange={(e) => setAgentPrice(e.target.value)}
+                                        />
+                                        {selectedProduct && availableProducts && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Base price: GHS {availableProducts.find(p => p.id.toString() === selectedProduct)?.price || 0}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <Button type="submit" disabled={!selectedProduct || !agentPrice}>
+                                        {processing ? 'Adding...' : 'Add Product'}
+                                    </Button>
+                                </form>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Your Shop Products</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3 max-h-64 overflow-y-auto">
+                                    {agentProducts?.map((agentProduct) => (
+                                        <div key={agentProduct.id} className="flex justify-between items-center p-3 border rounded">
+                                            <div>
+                                                <div className="font-medium">{agentProduct.product.name}</div>
+                                                <div className="text-sm text-gray-500">
+                                                    Base: GHS {agentProduct.product.price} | Your Price: GHS {agentProduct.agent_price}
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => handleRemoveProduct(agentProduct.product.id)}
+                                                disabled={processing}
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    {(!agentProducts || agentProducts.length === 0) && (
+                                        <p className="text-gray-500 text-center py-4">No products in your shop yet</p>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Performance Summary */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Commission Summary</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Total Earned:</span>
+                                        <span className="font-semibold">GHS {(Number(dashboardData?.total_commissions) || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Available:</span>
+                                        <span className="font-semibold text-green-600">GHS {(Number(dashboardData?.available_commissions) || 0).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Referral Summary</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Total Referrals:</span>
+                                        <span className="font-semibold">{dashboardData?.total_referrals || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Referral Earnings:</span>
+                                        <span className="font-semibold text-purple-600">GHS {(Number(dashboardData?.referral_earnings) || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Avg per Referral:</span>
+                                        <span className="font-semibold">
+                                            GHS {(Number(dashboardData?.total_referrals) || 0) > 0 ? ((Number(dashboardData?.referral_earnings) || 0) / (Number(dashboardData?.total_referrals) || 1)).toFixed(2) : '0.00'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+}

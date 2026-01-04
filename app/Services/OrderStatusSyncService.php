@@ -5,16 +5,19 @@ namespace App\Services;
 use App\Models\Order;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Services\CommissionService;
 
 class OrderStatusSyncService
 {
     private $jaybartApiKey;
     private $moolreSmsService;
+    private $commissionService;
 
     public function __construct()
     {
         $this->jaybartApiKey = env('ORDER_PUSHER_API_KEY', '');
         $this->moolreSmsService = new SmsService();
+        $this->commissionService = new CommissionService();
     }
 
     public function syncOrderStatuses()
@@ -106,6 +109,14 @@ class OrderStatusSyncService
                         } catch (\Exception $e) {
                             Log::error('Failed to send SMS notification', ['order_id' => $order->id, 'error' => $e->getMessage()]);
                         }
+                        
+                        // Make commission available when order is completed
+                        $this->commissionService->makeCommissionAvailable($order);
+                    }
+                    
+                    // Reverse commission if order is cancelled
+                    if ($newStatus === 'cancelled') {
+                        $this->commissionService->reverseCommission($order);
                     }
                 } else {
                     Log::info('Jaybart order status unchanged', [

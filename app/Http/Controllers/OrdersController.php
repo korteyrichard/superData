@@ -55,9 +55,9 @@ class OrdersController extends Controller
             return redirect()->back()->with('error', 'Cart is empty');
         }
 
-        // Calculate total by summing the price of each cart item (not price * quantity)
+        // Calculate total using cart item prices (agent prices if from agent shop)
         $total = $cartItems->sum(function ($item) {
-            return (float) ($item->product->price ?? 0);
+            return (float) ($item->price ?? $item->product->price ?? 0) * $item->quantity;
         });
         Log::info('Total calculated.', ['total' => $total, 'walletBalance' => $user->wallet_balance]);
 
@@ -91,13 +91,35 @@ class OrdersController extends Controller
             ]);
             Log::info('Order created.', ['orderId' => $order->id]);
 
-            // Attach products to the order
+            // Attach products to the order and create agent commissions
             foreach ($cartItems as $item) {
+                $price = (float) ($item->price ?? $item->product->price ?? 0);
                 $order->products()->attach($item->product_id, [
                     'quantity' => (int) ($item->quantity ?? 1),
-                    'price' => (float) ($item->product->price ?? 0),
+                    'price' => $price,
                     'beneficiary_number' => $item->beneficiary_number,
                 ]);
+                
+                // Create agent commission if item was purchased through agent shop
+                if ($item->agent_id) {
+                    $basePrice = (float) $item->product->price;
+                    $commissionAmount = ($price - $basePrice) * $item->quantity;
+                    
+                    if ($commissionAmount > 0) {
+                        \App\Models\Commission::create([
+                            'agent_id' => $item->agent_id,
+                            'order_id' => $order->id,
+                            'amount' => $commissionAmount,
+                            'status' => 'pending'
+                        ]);
+                        Log::info('Agent commission created.', [
+                            'agentId' => $item->agent_id, 
+                            'orderId' => $order->id, 
+                            'commission' => $commissionAmount
+                        ]);
+                    }
+                }
+                
                 Log::info('Product attached to order.', ['orderId' => $order->id, 'productId' => $item->product_id, 'beneficiaryNumber' => $item->beneficiary_number]);
             }
 
