@@ -56,7 +56,9 @@ export default function JoinUs({ auth }: PageProps) {
                                 Access comprehensive video tutorials and step-by-step guides to master our platform.
                             </p>
                             <a
-                                href="https://t.me/superdatagh"
+                                href="https://t.me/+fZIWDuehtQNmM2I8
+                                
+                                "
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"

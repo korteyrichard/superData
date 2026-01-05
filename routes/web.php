@@ -161,3 +161,4 @@ Route::get('/payment/failed', function () { return 'Payment Failed!'; })->name('
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/debug.php'; // Temporary debug routes

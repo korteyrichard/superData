@@ -196,8 +196,9 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
             </div>
 
             {showPurchaseModal && selectedProduct && (
-                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl transform transition-all">
+                <div className="fixed inset-0 bg-black bg-opacity-60 z-50 overflow-y-auto">
+                    <div className="flex min-h-full items-center justify-center p-4">
+                        <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl transform transition-all my-8">
                         <div className="text-center mb-6">
                             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -279,6 +280,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                 </Button>
                             </div>
                         </form>
+                        </div>
                     </div>
                 </div>
             )}

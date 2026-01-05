@@ -194,6 +194,7 @@ export default function DashboardLayout({ user, header, children }: DashboardLay
                     {children}
                 </main>
             </div>
+            <Toaster />
         </div>
     );
 }

@@ -129,28 +129,32 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-3">
-                                <div className="flex items-center space-x-2">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                     <Input 
                                         value={shopUrl} 
                                         readOnly 
-                                        className="flex-1"
+                                        className="flex-1 text-xs sm:text-sm"
                                     />
-                                    <Button 
-                                        onClick={copyToClipboard}
-                                        variant="outline"
-                                        size="sm"
-                                    >
-                                        {copied ? 'Copied!' : 'Copy'}
-                                    </Button>
-                                    <Button 
-                                        onClick={shareShop}
-                                        variant="outline"
-                                        size="sm"
-                                    >
-                                        Share
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            onClick={copyToClipboard}
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1 sm:flex-none"
+                                        >
+                                            {copied ? 'Copied!' : 'Copy'}
+                                        </Button>
+                                        <Button 
+                                            onClick={shareShop}
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1 sm:flex-none"
+                                        >
+                                            Share
+                                        </Button>
+                                    </div>
                                 </div>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-xs sm:text-sm text-gray-500">
                                     Share this link with customers so they can buy from your shop
                                 </p>
                             </div>
@@ -158,50 +162,50 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                     </Card>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="text-sm font-medium text-gray-600">Total Earnings</CardTitle>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Total Earnings</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-blue-600">GHS {(Number(dashboardData?.total_commissions) || 0).toFixed(2)}</div>
+                            <CardContent className="pt-0">
+                                <div className="text-xl sm:text-2xl font-bold text-blue-600">GHS {(Number(dashboardData?.total_commissions) || 0).toFixed(2)}</div>
                                 <p className="text-xs text-gray-500 mt-1">Sales + referrals</p>
                             </CardContent>
                         </Card>
 
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="text-xs font-medium text-gray-600">Available Balance</CardTitle>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Available Balance</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-green-600">GHS {(Number(dashboardData?.available_commissions) || 0).toFixed(2)}</div>
+                            <CardContent className="pt-0">
+                                <div className="text-xl sm:text-2xl font-bold text-green-600">GHS {(Number(dashboardData?.available_commissions) || 0).toFixed(2)}</div>
                                 <p className="text-xs text-gray-500 mt-1">Ready to withdraw</p>
                             </CardContent>
                         </Card>
 
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="text-xs font-medium text-gray-600">Sales Commissions</CardTitle>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Sales Commissions</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-purple-600">GHS {(Number(dashboardData?.total_sales) || 0).toFixed(2)}</div>
+                            <CardContent className="pt-0">
+                                <div className="text-xl sm:text-2xl font-bold text-purple-600">GHS {(Number(dashboardData?.total_sales) || 0).toFixed(2)}</div>
                                 <p className="text-xs text-gray-500 mt-1">From product sales</p>
                             </CardContent>
                         </Card>
 
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="text-xs font-medium text-gray-600">Referral Earnings</CardTitle>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Referral Earnings</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-indigo-600">GHS {(Number(dashboardData?.referral_earnings) || 0).toFixed(2)}</div>
+                            <CardContent className="pt-0">
+                                <div className="text-xl sm:text-2xl font-bold text-indigo-600">GHS {(Number(dashboardData?.referral_earnings) || 0).toFixed(2)}</div>
                                 <p className="text-xs text-gray-500 mt-1">{dashboardData?.total_referrals || 0} referrals</p>
                             </CardContent>
                         </Card>
                     </div>
 
                     {/* Shop Products Management */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Add Product to Shop</CardTitle>
@@ -210,13 +214,16 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                                 <form onSubmit={handleAddProduct} className="space-y-4">
                                     <div>
                                         <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="w-full">
                                                 <SelectValue placeholder="Select a product" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {availableProducts?.map((product) => (
                                                     <SelectItem key={product.id} value={product.id.toString()}>
-                                                        {product.name} - GHS {product.price} ({product.network})
+                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                                                            <span className="font-medium">{product.name}</span>
+                                                            <span className="text-sm text-gray-500">GHS {product.price} ({product.network})</span>
+                                                        </div>
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -232,6 +239,7 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                                             placeholder="Your selling price"
                                             value={agentPrice}
                                             onChange={(e) => setAgentPrice(e.target.value)}
+                                            className="w-full"
                                         />
                                         {selectedProduct && availableProducts && (
                                             <p className="text-xs text-gray-500 mt-1">
@@ -239,7 +247,7 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                                             </p>
                                         )}
                                     </div>
-                                    <Button type="submit" disabled={!selectedProduct || !agentPrice}>
+                                    <Button type="submit" disabled={!selectedProduct || !agentPrice} className="w-full sm:w-auto">
                                         {processing ? 'Adding...' : 'Add Product'}
                                     </Button>
                                 </form>
@@ -253,10 +261,10 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                             <CardContent>
                                 <div className="space-y-3 max-h-64 overflow-y-auto">
                                     {agentProducts?.map((agentProduct) => (
-                                        <div key={agentProduct.id} className="flex justify-between items-center p-3 border rounded">
-                                            <div>
-                                                <div className="font-medium">{agentProduct.product.name}</div>
-                                                <div className="text-sm text-gray-500">
+                                        <div key={agentProduct.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 border rounded">
+                                            <div className="flex-1">
+                                                <div className="font-medium text-sm sm:text-base">{agentProduct.product.name}</div>
+                                                <div className="text-xs sm:text-sm text-gray-500">
                                                     Base: GHS {agentProduct.product.price} | Your Price: GHS {agentProduct.agent_price}
                                                 </div>
                                             </div>
@@ -265,6 +273,7 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                                                 size="sm"
                                                 onClick={() => handleRemoveProduct(agentProduct.product.id)}
                                                 disabled={processing}
+                                                className="w-full sm:w-auto"
                                             >
                                                 Remove
                                             </Button>
@@ -279,7 +288,7 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                     </div>
 
                     {/* Performance Summary */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Commission Summary</CardTitle>

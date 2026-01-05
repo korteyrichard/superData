@@ -57,7 +57,7 @@ export default function Welcome() {
                             <div className="hidden lg:flex space-x-6">
                                 {auth.user ? (
                                     <Link
-                                        href={auth.user.role === 'agent' ? route('dashboard') : auth.user.role === 'admin' ? route('admin.dashboard') : route('dashboard')}
+                                        href={auth.user.role === 'admin' ? route('admin.dashboard') : route('dashboard')}
                                         className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-full hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
                                     >
                                         Dashboard
@@ -91,7 +91,7 @@ export default function Welcome() {
                             <div className="flex flex-col space-y-2 pb-4">
                                 {auth.user ? (
                                     <Link
-                                        href={auth.user.role === 'agent' ? route('dashboard') : auth.user.role === 'admin' ? route('admin.dashboard') : route('become-a-dealer')}
+                                        href={auth.user.role === 'admin' ? route('admin.dashboard') : route('dashboard')}
                                         className="block px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-full text-center hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
                                         onClick={() => setNavOpen(false)}
                                     >

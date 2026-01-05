@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 interface CartItem {
   id: number;
@@ -42,6 +43,7 @@ const TelecelCard: React.FC<ProductCardProps> = ({ productId, name, quantity, cu
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [beneficiaryNumber, setBeneficiaryNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleAddToCart = () => {
     // Validate phone number format
@@ -65,14 +67,40 @@ const TelecelCard: React.FC<ProductCardProps> = ({ productId, name, quantity, cu
       quantity: quantity,
       beneficiary_number: beneficiaryNumber,
     }, {
-      onSuccess: () => {
+      onSuccess: (page) => {
         setIsModalOpen(false);
         setBeneficiaryNumber('');
         setIsLoading(false);
+        toast({
+          description: "Product added to cart successfully!",
+        });
       },
       onError: (errors) => {
         console.error('Error adding to cart:', errors);
         setIsLoading(false);
+        
+        // Handle validation errors or server errors
+        if (errors.message) {
+          toast({
+            description: errors.message,
+            variant: "destructive",
+            className: "bg-red-500 text-white border-red-600",
+          });
+        } else if (typeof errors === 'object') {
+          // Handle validation errors
+          const errorMessages = Object.values(errors).flat().join(', ');
+          toast({
+            description: errorMessages,
+            variant: "destructive",
+            className: "bg-red-500 text-white border-red-600",
+          });
+        } else {
+          toast({
+            description: "Failed to add item to cart. Please try again.",
+            variant: "destructive",
+            className: "bg-red-500 text-white border-red-600",
+          });
+        }
       }
     });
   };

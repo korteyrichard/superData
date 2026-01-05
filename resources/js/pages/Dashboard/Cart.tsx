@@ -10,6 +10,7 @@ interface CartProduct {
   product_id: number;
   quantity: string;
   beneficiary_number: string;
+  price: number;
   product: {
     name: string;
     price: number;
@@ -30,7 +31,7 @@ export default function Cart() {
     router.delete(route('remove.from.cart', cartId));
   };
 
-  const total = cartItems.reduce((sum, item) => sum + Number(item.product?.price || 0), 0);
+  const total = cartItems.reduce((sum, item) => sum + Number(item.price || 0), 0);
 
   return (
     <DashboardLayout
@@ -128,7 +129,7 @@ export default function Cart() {
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                              GHS {item.product?.price || 0}
+                              GHS {item.price || 0}
                             </div>
                           </div>
                         </div>
@@ -170,7 +171,7 @@ export default function Cart() {
                           
                           <div className="text-right">
                             <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                              GHS {item.product?.price || 0}
+                              GHS {item.price || 0}
                             </div>
                           </div>
                           

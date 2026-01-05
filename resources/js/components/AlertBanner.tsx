@@ -42,30 +42,30 @@ export default function AlertBanner({ alerts }: AlertBannerProps) {
   const getAlertStyles = (type: string) => {
     switch (type) {
       case 'info':
-        return 'bg-blue-50 border-blue-500 text-blue-800 dark:bg-blue-900/20 dark:border-blue-400 dark:text-blue-200';
+        return 'bg-blue-50 border-blue-500 text-blue-900 dark:bg-blue-950/90 dark:border-blue-300 dark:text-blue-100';
       case 'warning':
-        return 'bg-yellow-50 border-yellow-500 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-400 dark:text-yellow-200';
+        return 'bg-yellow-50 border-yellow-500 text-yellow-900 dark:bg-yellow-950/90 dark:border-yellow-300 dark:text-yellow-100';
       case 'success':
-        return 'bg-green-50 border-green-500 text-green-800 dark:bg-green-900/20 dark:border-green-400 dark:text-green-200';
+        return 'bg-green-50 border-green-500 text-green-900 dark:bg-green-950/90 dark:border-green-300 dark:text-green-100';
       case 'error':
-        return 'bg-red-50 border-red-500 text-red-800 dark:bg-red-900/20 dark:border-red-400 dark:text-red-200';
+        return 'bg-red-50 border-red-500 text-red-900 dark:bg-red-950/90 dark:border-red-300 dark:text-red-100';
       default:
-        return 'bg-gray-50 border-gray-500 text-gray-800 dark:bg-gray-900/20 dark:border-gray-400 dark:text-gray-200';
+        return 'bg-gray-50 border-gray-500 text-gray-900 dark:bg-gray-950/90 dark:border-gray-300 dark:text-gray-100';
     }
   };
 
   const getButtonStyles = (type: string) => {
     switch (type) {
       case 'info':
-        return 'bg-blue-600 hover:bg-blue-700 text-white';
+        return 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white';
       case 'warning':
-        return 'bg-yellow-600 hover:bg-yellow-700 text-white';
+        return 'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white';
       case 'success':
-        return 'bg-green-600 hover:bg-green-700 text-white';
+        return 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white';
       case 'error':
-        return 'bg-red-600 hover:bg-red-700 text-white';
+        return 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white';
       default:
-        return 'bg-gray-600 hover:bg-gray-700 text-white';
+        return 'bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white';
     }
   };
 
@@ -110,8 +110,8 @@ export default function AlertBanner({ alerts }: AlertBannerProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent">
-      <div className={`max-w-md w-full mx-4 rounded-lg border-l-4 p-6 shadow-lg ${getAlertStyles(currentAlert.type)}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 dark:bg-black/40">
+      <div className={`max-w-md w-full mx-4 rounded-lg border-l-4 p-6 shadow-xl backdrop-blur-sm ${getAlertStyles(currentAlert.type)}`}>
         <div className="flex items-start">
           <div className="flex-shrink-0">
             {getIcon(currentAlert.type)}

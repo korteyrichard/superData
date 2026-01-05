@@ -8,6 +8,10 @@ class Product extends Model
 {
     protected $fillable = ['name', 'price', 'description', 'network', 'expiry','quantity','status', 'product_type'];
 
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
+
     public function carts()
     {
         return $this->hasMany(Cart::class);

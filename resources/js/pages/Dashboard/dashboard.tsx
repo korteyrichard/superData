@@ -161,10 +161,10 @@ export default function Dashboard({ auth }: DashboardProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Action Buttons Section */}
           {auth.user.role === 'customer' && (
-          <div className='w-full mb-10'>
+          <div className='w-full mb-6 sm:mb-10'>
                    <Link
                       href={route('become-a-dealer')}
-                      className="px-6 py-2 text-gray-700 font-medium rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:text-white hover:-translate-y-0.5 transition-all duration-300"
+                      className="inline-block w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-center text-gray-700 font-medium rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:text-white hover:-translate-y-0.5 transition-all duration-300"
                     >
                       Become a Dealer
                     </Link>
@@ -173,10 +173,10 @@ export default function Dashboard({ auth }: DashboardProps) {
            
            {/* Agent/Dealer Action Buttons */}
            {auth.user.role === 'agent' && (
-           <div className='w-full mb-10'>
+           <div className='w-full mb-6 sm:mb-10'>
                    <Link
                       href={route('become-a-dealer')}
-                      className="px-6 py-2 text-white font-medium rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:-translate-y-0.5 transition-all duration-300"
+                      className="inline-block w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-center text-white font-medium rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:-translate-y-0.5 transition-all duration-300"
                     >
                       Become a Dealer
                     </Link>
@@ -185,21 +185,23 @@ export default function Dashboard({ auth }: DashboardProps) {
            
            {/* Dealer Dashboard Link */}
            {auth.user.role === 'dealer' && (
-           <div className='w-full mb-10'>
-                   <Link
-                      href={route('dealer.dashboard')}
-                      className="px-6 py-2 mr-4 text-white font-medium rounded-full bg-gradient-to-r from-green-600 to-emerald-600 hover:bg-gradient-to-r hover:from-emerald-600 hover:to-green-600 hover:-translate-y-0.5 transition-all duration-300"
-                    >
-                      Dealer Dashboard
-                    </Link>
-                    {auth.user.agent_shop && (
-                      <Link
-                        href={`/shop/${auth.user.agent_shop.username}`}
-                        className="px-6 py-2 text-gray-700 font-medium rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:bg-gradient-to-r hover:from-purple-600 hover:to-blue-600 hover:text-white hover:-translate-y-0.5 transition-all duration-300"
+           <div className='w-full mb-6 sm:mb-10'>
+                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                     <Link
+                        href={route('dealer.dashboard')}
+                        className="inline-block w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-center text-white font-medium rounded-full bg-gradient-to-r from-green-600 to-emerald-600 hover:bg-gradient-to-r hover:from-emerald-600 hover:to-green-600 hover:-translate-y-0.5 transition-all duration-300"
                       >
-                        View My Shop
+                        Dealer Dashboard
                       </Link>
-                    )}
+                      {auth.user.agent_shop && (
+                        <Link
+                          href={`/shop/${auth.user.agent_shop.username}`}
+                          className="inline-block w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-center text-gray-700 font-medium rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:bg-gradient-to-r hover:from-purple-600 hover:to-blue-600 hover:text-white hover:-translate-y-0.5 transition-all duration-300"
+                        >
+                          View My Shop
+                        </Link>
+                      )}
+                   </div>
               </div>)
            }
 

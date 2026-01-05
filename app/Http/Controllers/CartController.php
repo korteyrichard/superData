@@ -30,27 +30,41 @@ class CartController extends Controller
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => 'An item for this beneficiary number is already in your cart']);
             }
-            return redirect()->back()->with('error', 'An item for this beneficiary number is already in your cart');
+            // For Inertia.js requests, we need to throw a validation exception
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'message' => 'An item for this beneficiary number is already in your cart'
+            ]);
         }
         
         // Check if there's an existing order with processing status for this beneficiary number
         $processingOrder = Order::where('user_id', $user->id)
-            ->where('beneficiary_number', $beneficiaryNumber)
             ->where('status', 'processing')
+            ->where(function($query) use ($beneficiaryNumber) {
+                $query->where('beneficiary_number', $beneficiaryNumber)
+                      ->orWhereHas('products', function($q) use ($beneficiaryNumber) {
+                          $q->where('order_product.beneficiary_number', $beneficiaryNumber);
+                      });
+            })
             ->first();
             
         if ($processingOrder) {
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => 'There is already an order to the same beneficiary number with status processing']);
             }
-            return redirect()->back()->with('error', 'There is already an order to the same beneficiary number with status processing');
+            // For Inertia.js requests, we need to throw a validation exception
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'message' => 'There is already an order to the same beneficiary number with status processing'
+            ]);
         }
+        
+        $product = Product::findOrFail($request->product_id);
         
         Cart::create([
             'user_id' => $user->id,
             'product_id' => $request->product_id,
             'quantity' => $request->quantity,
             'beneficiary_number' => $beneficiaryNumber,
+            'price' => $product->price,
         ]);
 
         if ($request->expectsJson()) {

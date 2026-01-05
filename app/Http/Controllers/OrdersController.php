@@ -44,36 +44,88 @@ class OrdersController extends Controller
     // Handle checkout and create a new order
     public function checkout(Request $request)
     {
-        Log::info('Checkout process started.');
-        $user = Auth::user();
+        // Add immediate logging to confirm route is hit
+        Log::info('=== CHECKOUT ROUTE HIT ===', [
+            'timestamp' => now(),
+            'user_id' => Auth::id(), 
+            'user_role' => Auth::user()->role ?? 'unknown',
+            'request_method' => $request->method(),
+            'request_url' => $request->fullUrl()
+        ]);
+        
+        try {
+            Log::info('Checkout process started.', ['user_id' => Auth::id(), 'user_role' => Auth::user()->role ?? 'unknown']);
+            $user = Auth::user();
 
-        $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
-        Log::info('Cart items fetched.', ['cartItemsCount' => $cartItems->count()]);
+            if (!$user) {
+                Log::error('No authenticated user found');
+                return redirect()->back()->with('error', 'Authentication required');
+            }
 
-        if ($cartItems->isEmpty()) {
-            Log::warning('Cart is empty for user.', ['userId' => $user->id]);
-            return redirect()->back()->with('error', 'Cart is empty');
-        }
+            $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
+            Log::info('Cart items fetched.', ['cartItemsCount' => $cartItems->count(), 'user_id' => $user->id]);
 
-        // Calculate total using cart item prices (agent prices if from agent shop)
-        $total = $cartItems->sum(function ($item) {
-            return (float) ($item->price ?? $item->product->price ?? 0) * $item->quantity;
-        });
-        Log::info('Total calculated.', ['total' => $total, 'walletBalance' => $user->wallet_balance]);
+            if ($cartItems->isEmpty()) {
+                Log::warning('Cart is empty for user.', ['userId' => $user->id]);
+                return redirect()->back()->with('error', 'Cart is empty');
+            }
 
-        // Check if user has enough wallet balance
-        if ($user->wallet_balance < $total) {
-            Log::warning('Insufficient wallet balance.', ['userId' => $user->id, 'walletBalance' => $user->wallet_balance, 'total' => $total]);
-            return redirect()->back()->with('error', 'Insufficient wallet balance. Top up to proceed with the purchase.');
+            // Log cart items details for debugging
+            foreach ($cartItems as $item) {
+                Log::info('Cart item details', [
+                    'item_id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'product_price' => $item->product->price ?? 'null',
+                    'beneficiary_number' => $item->beneficiary_number
+                ]);
+            }
+
+            // Calculate total using cart item prices or product prices as fallback
+            $total = $cartItems->sum(function ($item) {
+                $price = $item->price ?? $item->product->price ?? 0;
+                $price = (float) $price;
+                Log::info('Calculating item total', ['price' => $price, 'quantity' => $item->quantity, 'item_total' => $price]);
+                return $price;
+            });
+            Log::info('Total calculated.', ['total' => $total, 'walletBalance' => $user->wallet_balance]);
+
+            // Check if user has enough wallet balance
+            if ($user->wallet_balance < $total) {
+                Log::warning('Insufficient wallet balance.', ['userId' => $user->id, 'walletBalance' => $user->wallet_balance, 'total' => $total]);
+                return redirect()->back()->with('error', 'Insufficient wallet balance. Top up to proceed with the purchase.');
+            }
+        } catch (\Exception $e) {
+            Log::error('Error in checkout initial validation', [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            return redirect()->back()->with('error', 'Checkout failed: ' . $e->getMessage());
         }
 
         DB::beginTransaction();
         Log::info('Database transaction started.');
         try {
             // Deduct wallet balance (use bcsub for decimal math and cast to float for decimal:2)
-            $user->wallet_balance = (float) bcsub((string) $user->wallet_balance, (string) $total, 2);
-            $user->save();
-            Log::info('Wallet balance deducted.', ['userId' => $user->id, 'newWalletBalance' => $user->wallet_balance]);
+            Log::info('About to deduct wallet balance', [
+                'current_balance' => $user->wallet_balance,
+                'total_to_deduct' => $total,
+                'balance_type' => gettype($user->wallet_balance),
+                'total_type' => gettype($total)
+            ]);
+            
+            $newBalance = bcsub((string) $user->wallet_balance, (string) $total, 2);
+            Log::info('New balance calculated', ['new_balance' => $newBalance]);
+            
+            $user->wallet_balance = (float) $newBalance;
+            $saveResult = $user->save();
+            Log::info('Wallet balance deducted.', [
+                'userId' => $user->id, 
+                'newWalletBalance' => $user->wallet_balance,
+                'save_result' => $saveResult
+            ]);
 
             // Get beneficiary_number from the first cart item (assuming all items have the same number)
             $beneficiaryNumber = $cartItems->first()->beneficiary_number ?? null;
@@ -82,6 +134,13 @@ class OrdersController extends Controller
             Log::info('Beneficiary and network info.', ['beneficiaryNumber' => $beneficiaryNumber, 'network' => $network]);
 
             // Create the order
+            Log::info('About to create order', [
+                'user_id' => $user->id,
+                'total' => $total,
+                'beneficiary_number' => $beneficiaryNumber,
+                'network' => $network
+            ]);
+            
             $order = Order::create([
                 'user_id' => $user->id,
                 'status' => 'processing', // set status to processing after deduction
@@ -89,13 +148,16 @@ class OrdersController extends Controller
                 'beneficiary_number' => $beneficiaryNumber,
                 'network' => $network,
             ]);
-            Log::info('Order created.', ['orderId' => $order->id]);
+            Log::info('Order created successfully.', ['orderId' => $order->id, 'order_data' => $order->toArray()]);
 
             // Attach products to the order and create agent commissions
             foreach ($cartItems as $item) {
-                $price = (float) ($item->price ?? $item->product->price ?? 0);
+                $price = $item->price ?? $item->product->price ?? 0;
+                $price = (float) $price;
+                $quantity = $item->quantity; // Keep as string for data amount
+                
                 $order->products()->attach($item->product_id, [
-                    'quantity' => (int) ($item->quantity ?? 1),
+                    'quantity' => $quantity,
                     'price' => $price,
                     'beneficiary_number' => $item->beneficiary_number,
                 ]);
@@ -103,7 +165,7 @@ class OrdersController extends Controller
                 // Create agent commission if item was purchased through agent shop
                 if ($item->agent_id) {
                     $basePrice = (float) $item->product->price;
-                    $commissionAmount = ($price - $basePrice) * $item->quantity;
+                    $commissionAmount = $price - $basePrice; // No quantity multiplication
                     
                     if ($commissionAmount > 0) {
                         \App\Models\Commission::create([
@@ -154,7 +216,13 @@ class OrdersController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Checkout failed during transaction.', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            Log::error('Checkout failed during transaction.', [
+                'error' => $e->getMessage(), 
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
             return redirect()->back()->with('error', 'Checkout failed: ' . $e->getMessage());
         }
     }
