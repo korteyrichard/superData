@@ -14,6 +14,7 @@ interface ShopProduct {
     agent_price: number;
     product_type: string;
     status: string;
+    quantity: number;
 }
 
 interface Shop {
@@ -64,8 +65,19 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
         : products.filter(p => p.network === selectedNetwork);
 
     const handlePurchase = (product: ShopProduct) => {
+        console.log('Product selected:', product);
         setSelectedProduct(product);
-        setData('product_id', product.id.toString());
+        // Extract number from quantity string like "2GB" -> 2
+        const qty = parseInt(product.quantity.toString()) || 1;
+        console.log('Setting quantity to:', qty);
+        setData({
+            product_id: product.id.toString(),
+            quantity: qty,
+            beneficiary_number: '',
+            agent_username: shop.username,
+            customer_email: '',
+            customer_phone: ''
+        });
         setShowPurchaseModal(true);
     };
 
@@ -74,11 +86,11 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
         if (!auth?.user) {
             setData('customer_phone', data.beneficiary_number);
         }
-        
-        const form = e.target as HTMLFormElement;
-        form.action = '/shop/purchase';
-        form.method = 'POST';
-        form.submit();
+        post('/shop/purchase', {
+            onError: (errors) => {
+                console.error('Purchase error:', errors);
+            }
+        });
     };
 
     return (
@@ -233,6 +245,8 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                     type="text"
                                     name="beneficiary_number"
                                     maxLength={10}
+                                    minLength={10}
+                                    pattern="[0-9]{10}"
                                     value={data.beneficiary_number}
                                     onChange={(e) => setData('beneficiary_number', e.target.value)}
                                     placeholder="0XXXXXXXXX"

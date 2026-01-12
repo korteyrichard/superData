@@ -73,13 +73,13 @@ class WithdrawalController extends Controller
         ]);
 
         $request->validate([
-            'amount' => 'required|numeric|min:200|max:' . $actualAvailable,
+            'amount' => 'required|numeric|min:50|max:' . $actualAvailable,
             'network' => 'required|in:mtn,telecel',
             'mobile_money_account_name' => 'required|string|max:255',
             'mobile_money_number' => 'required|string|max:20',
         ]);
 
-        if ($actualAvailable < 200) {
+        if ($actualAvailable < 50) {
             \Log::warning('Insufficient balance for withdrawal', [
                 'actual_available' => $actualAvailable,
                 'user_id' => $request->user()->id

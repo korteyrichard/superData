@@ -157,7 +157,7 @@ export default function Welcome() {
                         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                             {auth.user ? (
                                 <Link
-                                    href={auth.user.role === 'agent' ? route('dashboard') : auth.user.role === 'admin' ? route('admin.dashboard') : route('become-a-dealer')}
+                                    href={auth.user.role === 'admin' ? route('admin.dashboard') : route('dashboard')}
                                     className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg rounded-full hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 transform hover:scale-105"
                                 >
                                     Go to Dashboard

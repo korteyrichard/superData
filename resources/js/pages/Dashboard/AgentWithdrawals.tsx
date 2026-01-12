@@ -173,7 +173,7 @@ export default function AgentWithdrawals({ auth, withdrawals, walletBalance, ear
                                         <Input
                                             type="number"
                                             step="0.01"
-                                            min="200"
+                                            min="50"
                                             max={earningsBreakdown?.total_available || 0}
                                             placeholder="Enter amount to withdraw"
                                             value={data.amount}
@@ -230,7 +230,7 @@ export default function AgentWithdrawals({ auth, withdrawals, walletBalance, ear
                                     <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Minimum Amount:</span>
-                                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">GHS 200.00</span>
+                                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">GHS 50.00</span>
                                         </div>
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Available Balance:</span>
@@ -273,7 +273,7 @@ export default function AgentWithdrawals({ auth, withdrawals, walletBalance, ear
                                     
                                     <Button 
                                         type="submit" 
-                                        disabled={processing || !data.amount || !data.network || !data.mobile_money_account_name || !data.mobile_money_number || Number(data.amount) < 200 || Number(data.amount) > (earningsBreakdown?.total_available || 0)}
+                                        disabled={processing || !data.amount || !data.network || !data.mobile_money_account_name || !data.mobile_money_number || Number(data.amount) < 50 || Number(data.amount) > (earningsBreakdown?.total_available || 0)}
                                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 text-lg font-semibold shadow-lg transition-all duration-200 hover:shadow-xl"
                                     >
                                         {processing ? (

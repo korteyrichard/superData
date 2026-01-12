@@ -15,7 +15,7 @@ class OrderStatusSyncService
 
     public function __construct()
     {
-        $this->jaybartApiKey = env('ORDER_PUSHER_API_KEY', '');
+        $this->jaybartApiKey = env('ORDER_PUSHER_API_KEY', '75dc87ab33239934578afbf81a9dee777d591e4f');
         $this->moolreSmsService = new SmsService();
         $this->commissionService = new CommissionService();
     }

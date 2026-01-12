@@ -147,7 +147,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->name('admin.')->group(fun
     Route::put('admin/alerts/{alert}', [\App\Http\Controllers\AdminDashboardController::class, 'updateAlert'])->name('alerts.update');
     Route::delete('admin/alerts/{alert}', [\App\Http\Controllers\AdminDashboardController::class, 'deleteAlert'])->name('alerts.delete');
     Route::get('admin/commissions', [\App\Http\Controllers\AdminDashboardController::class, 'commissions'])->name('commissions');
-    Route::post('admin/commissions/{commission}/available', [\App\Http\Controllers\AdminDashboardController::class, 'makeCommissionAvailable'])->name('commissions.available');
+    Route::post('admin/referral-commissions/{referralCommission}/available', [\App\Http\Controllers\AdminDashboardController::class, 'makeReferralCommissionAvailable'])->name('referral-commissions.available');
 });
 
 // Paystack payment routes

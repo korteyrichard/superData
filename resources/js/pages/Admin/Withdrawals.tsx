@@ -199,6 +199,59 @@ export default function AdminWithdrawals({ auth, withdrawals }: AdminWithdrawals
                                 <p className="text-gray-500">No withdrawal requests found</p>
                             </div>
                         )}
+                        
+                        {/* Pagination */}
+                        {withdrawals.last_page > 1 && (
+                            <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                                <div className="flex justify-between flex-1 sm:hidden">
+                                    {withdrawals.current_page > 1 && (
+                                        <a href={`?page=${withdrawals.current_page - 1}`} className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                            Previous
+                                        </a>
+                                    )}
+                                    {withdrawals.current_page < withdrawals.last_page && (
+                                        <a href={`?page=${withdrawals.current_page + 1}`} className="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                            Next
+                                        </a>
+                                    )}
+                                </div>
+                                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                                    <div>
+                                        <p className="text-sm text-gray-700">
+                                            Showing <span className="font-medium">{((withdrawals.current_page - 1) * 50) + 1}</span> to{' '}
+                                            <span className="font-medium">{Math.min(withdrawals.current_page * 50, withdrawals.total)}</span> of{' '}
+                                            <span className="font-medium">{withdrawals.total}</span> results
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                            {withdrawals.current_page > 1 && (
+                                                <a href={`?page=${withdrawals.current_page - 1}`} className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                    Previous
+                                                </a>
+                                            )}
+                                            {Array.from({ length: Math.min(5, withdrawals.last_page) }, (_, i) => {
+                                                const page = i + 1;
+                                                return (
+                                                    <a key={page} href={`?page=${page}`} className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                                        page === withdrawals.current_page
+                                                            ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                                                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                                    }`}>
+                                                        {page}
+                                                    </a>
+                                                );
+                                            })}
+                                            {withdrawals.current_page < withdrawals.last_page && (
+                                                <a href={`?page=${withdrawals.current_page + 1}`} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                    Next
+                                                </a>
+                                            )}
+                                        </nav>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

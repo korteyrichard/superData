@@ -18,7 +18,7 @@ class AdminAgentWebController extends Controller
             ->withSum('commissions', 'amount')
             ->withSum('referralCommissions', 'amount')
             ->latest()
-            ->paginate(20);
+            ->paginate(50);
 
         // Calculate total commissions (regular + referral) for each dealer
         $dealers->getCollection()->transform(function ($dealer) {

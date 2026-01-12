@@ -82,11 +82,10 @@ class OrdersController extends Controller
                 ]);
             }
 
-            // Calculate total using cart item prices or product prices as fallback
+            // Calculate total using cart item prices only
             $total = $cartItems->sum(function ($item) {
-                $price = $item->price ?? $item->product->price ?? 0;
-                $price = (float) $price;
-                Log::info('Calculating item total', ['price' => $price, 'quantity' => $item->quantity, 'item_total' => $price]);
+                $price = (float) $item->price;
+                Log::info('Calculating item total', ['price' => $price, 'item_total' => $price]);
                 return $price;
             });
             Log::info('Total calculated.', ['total' => $total, 'walletBalance' => $user->wallet_balance]);
@@ -165,7 +164,18 @@ class OrdersController extends Controller
                 // Create agent commission if item was purchased through agent shop
                 if ($item->agent_id) {
                     $basePrice = (float) $item->product->price;
-                    $commissionAmount = $price - $basePrice; // No quantity multiplication
+                    $commissionAmount = $price - $basePrice;
+                    
+                    // DEBUG: Log commission calculation details
+                    Log::info('=== COMMISSION CALCULATION DEBUG ===', [
+                        'order_id' => $order->id,
+                        'product_name' => $item->product->name ?? 'unknown',
+                        'cart_price' => $price,
+                        'product_base_price' => $basePrice,
+                        'calculation' => "({$price} - {$basePrice})",
+                        'commission_amount' => $commissionAmount,
+                        'agent_id' => $item->agent_id
+                    ]);
                     
                     if ($commissionAmount > 0) {
                         \App\Models\Commission::create([

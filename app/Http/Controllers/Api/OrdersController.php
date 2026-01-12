@@ -32,13 +32,25 @@ class OrdersController extends Controller
             return $this->errorResponse('Only agents, dealers and admins can create orders via API', 403);
         }
         
-        $product = Product::where('id', $request->product_id)
-            ->where('status', 'IN STOCK')
-            ->where('product_type', 'agent_product')
-            ->first();
+        // Determine product type based on user role
+        $productType = match($user->role) {
+            'dealer' => 'dealer_product',
+            'agent' => 'agent_product', 
+            'admin' => null, // Admin can access all product types
+            default => null
+        };
+        
+        $productQuery = Product::where('id', $request->product_id)
+            ->where('status', 'IN STOCK');
+            
+        if ($productType) {
+            $productQuery->where('product_type', $productType);
+        }
+        
+        $product = $productQuery->first();
 
         if (!$product) {
-            return $this->errorResponse('Product not found, out of stock, or not available for agents', 404);
+            return $this->errorResponse('Product not found, out of stock, or not available for your role', 404);
         }
 
         // Validate that the product quantity matches the requested quantity
@@ -158,10 +170,22 @@ class OrdersController extends Controller
             return $this->errorResponse('Only agents, dealers and admins can access products via API', 403);
         }
         
-        $products = Product::where('status', 'IN STOCK')
-            ->where('product_type', 'agent_product')
-            ->select('id', 'name', 'price', 'network', 'product_type', 'description', 'quantity')
-            ->get();
+        // Determine product type based on user role
+        $productType = match($user->role) {
+            'dealer' => 'dealer_product',
+            'agent' => 'agent_product',
+            'admin' => null, // Admin can access all product types
+            default => null
+        };
+        
+        $productsQuery = Product::where('status', 'IN STOCK')
+            ->select('id', 'name', 'price', 'network', 'product_type', 'description', 'quantity');
+            
+        if ($productType) {
+            $productsQuery->where('product_type', $productType);
+        }
+        
+        $products = $productsQuery->get();
 
         return $this->successResponse($products);
     }

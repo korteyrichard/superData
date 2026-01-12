@@ -34,7 +34,8 @@ class PublicShopController extends Controller
                 'base_price' => $agentProduct->product->price,
                 'agent_price' => $agentProduct->agent_price,
                 'product_type' => $agentProduct->product->product_type,
-                'status' => $agentProduct->product->status
+                'status' => $agentProduct->product->status,
+                'quantity' => $agentProduct->product->quantity
             ];
         });
 
@@ -56,7 +57,7 @@ class PublicShopController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
-            'beneficiary_number' => 'required|string|max:10',
+            'beneficiary_number' => 'required|string|size:10|regex:/^[0-9]{10}$/',
             'agent_username' => 'required|string|exists:agent_shops,username',
             'customer_email' => 'required|email'
         ]);
@@ -69,7 +70,7 @@ class PublicShopController extends Controller
             return redirect()->back()->with('error', 'Product not available in this shop');
         }
 
-        $total = $agentProduct->agent_price * $request->quantity;
+        $total = $agentProduct->agent_price; // Don't multiply by quantity for data bundles
         $reference = 'agent_order_' . \Illuminate\Support\Str::random(16);
         $customerPhone = $request->customer_phone ?? $request->beneficiary_number;
         
@@ -114,7 +115,7 @@ class PublicShopController extends Controller
         ]);
 
         if ($response->successful()) {
-            return redirect($response->json('data.authorization_url'));
+            return Inertia::location($response->json('data.authorization_url'));
         }
 
         // Log the error for debugging
@@ -138,9 +139,10 @@ class PublicShopController extends Controller
             $orderData = session('pending_agent_order');
             
             if ($orderData && $orderData['reference'] === $reference) {
-                // Create order record
+                // Create order record with proper agent_id for commission tracking
                 $order = Order::create([
                     'user_id' => $orderData['agent_id'], // Assign to agent whose shop the order was made from
+                    'agent_id' => $orderData['agent_id'], // Set agent_id for commission calculation
                     'status' => 'processing',
                     'total' => $orderData['total'],
                     'beneficiary_number' => $orderData['beneficiary_number'],
@@ -149,26 +151,18 @@ class PublicShopController extends Controller
                     'customer_phone' => $orderData['customer_phone']
                 ]);
 
-                // Attach product to order
+                // Attach product to order with base price in pivot table
+                $basePrice = Product::find($orderData['product_id'])->price;
                 $order->products()->attach($orderData['product_id'], [
                     'quantity' => $orderData['quantity'],
-                    'price' => $orderData['price'],
+                    'price' => $basePrice, // Store base price for commission calculation
                     'beneficiary_number' => $orderData['beneficiary_number']
                 ]);
 
-                // Create agent commission
-                $basePrice = Product::find($orderData['product_id'])->price;
-                $commissionAmount = ($orderData['price'] - $basePrice) * $orderData['quantity'];
-                
-                if ($commissionAmount > 0) {
-                    Commission::create([
-                        'agent_id' => $orderData['agent_id'],
-                        'order_id' => $order->id,
-                        'amount' => $commissionAmount,
-                        'status' => 'available',
-                        'available_at' => now()
-                    ]);
-                }
+                // Use CommissionService for consistent commission calculation
+                $order->load('agent.agentShop.agentProducts', 'products');
+                $commissionService = new \App\Services\CommissionService();
+                $commission = $commissionService->calculateAndCreateCommission($order);
 
                 // Clear session
                 session()->forget('pending_agent_order');

@@ -74,21 +74,6 @@ export default function OrderSuccess({ order }: Props) {
                             </div>
                         </div>
                         
-                        {order.products && order.products.length > 0 && (
-                            <div className="mt-6">
-                                <h4 className="text-md font-medium text-gray-900 mb-3">Products</h4>
-                                {order.products.map((product) => (
-                                    <div key={product.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                                        <div>
-                                            <p className="font-medium">{product.name}</p>
-                                            <p className="text-sm text-gray-600">Qty: {product.pivot.quantity}</p>
-                                        </div>
-                                        <span className="font-medium">GH₵{product.pivot.price}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        
                         <div className="mt-6 text-center">
                             <p className="text-sm text-gray-600">
                                 You will receive your data/airtime shortly.

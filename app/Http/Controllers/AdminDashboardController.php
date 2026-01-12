@@ -162,15 +162,35 @@ class AdminDashboardController extends Controller
             $commissions->where('agent_id', $request->input('agent_id'));
         }
 
-        // Calculate total available commissions
+        // Calculate commission totals (excluding referral commissions)
+        $totalCommissions = \App\Models\Commission::sum('amount');
         $totalAvailableCommissions = \App\Models\Commission::where('status', 'available')->sum('amount');
+        $totalPendingCommissions = \App\Models\Commission::where('status', 'pending')->sum('amount');
+        $totalPaidCommissions = \App\Models\Commission::where('status', 'paid')->sum('amount');
+        $totalWithdrawnCommissions = \App\Models\Commission::where('status', 'withdrawn')->sum('amount');
+        
+        // Get commission counts
+        $totalCommissionCount = \App\Models\Commission::count();
+        $availableCommissionCount = \App\Models\Commission::where('status', 'available')->count();
+        $pendingCommissionCount = \App\Models\Commission::where('status', 'pending')->count();
+        $paidCommissionCount = \App\Models\Commission::where('status', 'paid')->count();
+        $withdrawnCommissionCount = \App\Models\Commission::where('status', 'withdrawn')->count();
 
         return Inertia::render('Admin/Commissions', [
-            'commissions' => $commissions->paginate(20),
+            'commissions' => $commissions->paginate(50),
             'filterStatus' => $request->input('status', ''),
             'filterAgentId' => $request->input('agent_id', ''),
             'agents' => User::whereIn('role', ['agent', 'dealer'])->get(['id', 'name', 'email']),
-            'totalAvailableCommissions' => $totalAvailableCommissions
+            'totalCommissions' => $totalCommissions,
+            'totalAvailableCommissions' => $totalAvailableCommissions,
+            'totalPendingCommissions' => $totalPendingCommissions,
+            'totalPaidCommissions' => $totalPaidCommissions,
+            'totalWithdrawnCommissions' => $totalWithdrawnCommissions,
+            'totalCommissionCount' => $totalCommissionCount,
+            'availableCommissionCount' => $availableCommissionCount,
+            'pendingCommissionCount' => $pendingCommissionCount,
+            'paidCommissionCount' => $paidCommissionCount,
+            'withdrawnCommissionCount' => $withdrawnCommissionCount
         ]);
     }
 

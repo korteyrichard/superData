@@ -14,7 +14,7 @@ class OrderPusherService
 
     public function __construct()
     {
-        $this->baseUrl = env('ORDER_PUSHER_BASE_URL', 'https://agent.jaybartservices.com/api/v1');
+        $this->baseUrl = env('ORDER_PUSHER_BASE_URL', '');
         $this->apiKey = env('ORDER_PUSHER_API_KEY', '');
     }
 

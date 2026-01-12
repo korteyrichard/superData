@@ -26,7 +26,7 @@ class AdminWithdrawalWebController extends Controller
             $query->where('status', $status);
         }
 
-        $withdrawals = $query->paginate(20);
+        $withdrawals = $query->paginate(50);
 
         return Inertia::render('Admin/Withdrawals', [
             'withdrawals' => $withdrawals,

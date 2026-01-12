@@ -50,6 +50,7 @@ class DealerWebController extends Controller
             ->get();
 
         $availableProducts = Product::where('status', 'IN STOCK')
+            ->where('product_type', 'dealer_product')
             ->whereNotIn('id', $dealerProducts->pluck('product_id'))
             ->get();
 
