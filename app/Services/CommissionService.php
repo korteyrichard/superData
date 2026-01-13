@@ -114,7 +114,7 @@ class CommissionService
 
             if ($agentProduct) {
                 // Commission = agent_price - base_price (NO quantity multiplication for data bundles)
-                $commission = $agentProduct->agent_price - $product->price;
+                $commission = $agentProduct->agent_price - $product->pivot->price;
                 $totalCommission += max(0, $commission);
                 
                 Log::info('Agent product found - commission calculated', [
