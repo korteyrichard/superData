@@ -20,9 +20,26 @@ class AdminAgentWebController extends Controller
             ->latest()
             ->paginate(50);
 
-        // Calculate total commissions (regular + referral) for each dealer
+        // Calculate total, available and withdrawn commissions for each dealer
         $dealers->getCollection()->transform(function ($dealer) {
             $dealer->total_commissions = ($dealer->commissions_sum_amount ?? 0) + ($dealer->referral_commissions_sum_amount ?? 0);
+            
+            // Get available commissions (regular + referral)
+            $availableCommissions = $dealer->commissions()
+                ->where('status', 'available')
+                ->sum('amount');
+            
+            $availableReferralCommissions = $dealer->referralCommissions()
+                ->where('status', 'available')
+                ->sum('amount');
+            
+            $dealer->available_commissions = $availableCommissions + $availableReferralCommissions;
+            
+            // Get withdrawn amount from approved/paid withdrawals
+            $dealer->withdrawn_commissions = $dealer->withdrawals()
+                ->whereIn('status', ['approved', 'paid'])
+                ->sum('amount');
+                
             return $dealer;
         });
 

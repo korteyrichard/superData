@@ -89,6 +89,67 @@ class CommissionService
         return $commission;
     }
 
+    public function calculateAndCreateCommissionFromShop(Order $order, $shop = null)
+    {
+        Log::info('=== CALCULATE AND CREATE COMMISSION FROM SHOP START ===', [
+            'order_id' => $order->id,
+            'agent_id' => $order->agent_id,
+            'shop_id' => $shop ? $shop->id : null,
+            'has_agent_id' => $order->agent_id ? 'yes' : 'no'
+        ]);
+        
+        if (!$order->agent_id) {
+            Log::info('No agent_id found, skipping commission calculation', [
+                'order_id' => $order->id
+            ]);
+            return null;
+        }
+
+        // Check if commission already exists for this order
+        $existingCommission = Commission::where('order_id', $order->id)->first();
+        if ($existingCommission) {
+            Log::warning('Commission already exists for this order, skipping', [
+                'order_id' => $order->id,
+                'existing_commission_id' => $existingCommission->id
+            ]);
+            return $existingCommission;
+        }
+
+        $commissionAmount = $this->calculateCommissionAmountFromShop($order, $shop);
+        
+        Log::info('Commission amount calculated from shop', [
+            'order_id' => $order->id,
+            'commission_amount' => $commissionAmount,
+            'shop_id' => $shop ? $shop->id : null
+        ]);
+        
+        if ($commissionAmount <= 0) {
+            Log::info('Commission amount is zero or negative, skipping commission creation', [
+                'order_id' => $order->id,
+                'commission_amount' => $commissionAmount
+            ]);
+            return null;
+        }
+
+        $commission = Commission::create([
+            'agent_id' => $order->agent_id,
+            'order_id' => $order->id,
+            'amount' => $commissionAmount,
+            'status' => 'available',
+            'available_at' => now()
+        ]);
+        
+        Log::info('Commission created successfully from shop', [
+            'order_id' => $order->id,
+            'commission_id' => $commission->id,
+            'commission_amount' => $commission->amount,
+            'agent_id' => $commission->agent_id,
+            'shop_id' => $shop ? $shop->id : null
+        ]);
+
+        return $commission;
+    }
+
     private function calculateCommissionAmount(Order $order)
     {
         $totalCommission = 0;
@@ -97,6 +158,21 @@ class CommissionService
             'order_id' => $order->id,
             'agent_id' => $order->agent_id,
             'products_count' => $order->products->count()
+        ]);
+
+        // This method is for orders where the agent has their own shop
+        if (!$order->agent || !$order->agent->agentShop) {
+            Log::warning('No agent shop found for commission calculation', [
+                'order_id' => $order->id,
+                'agent_id' => $order->agent_id
+            ]);
+            return 0;
+        }
+
+        $shop = $order->agent->agentShop;
+        Log::info('Using agent\'s own shop for commission calculation', [
+            'shop_id' => $shop->id,
+            'shop_owner_id' => $shop->user_id
         ]);
 
         foreach ($order->products as $product) {
@@ -108,7 +184,7 @@ class CommissionService
                 'pivot_quantity' => $product->pivot->quantity
             ]);
             
-            $agentProduct = $order->agent->agentShop->agentProducts()
+            $agentProduct = $shop->agentProducts()
                 ->where('product_id', $product->id)
                 ->first();
 
@@ -123,17 +199,18 @@ class CommissionService
                     'base_price' => $product->price,
                     'pivot_price' => $product->pivot->price,
                     'quantity' => $product->pivot->quantity,
-                    'calculation' => "({$agentProduct->agent_price} - {$product->price})",
+                    'calculation' => "({$agentProduct->agent_price} - {$product->pivot->price})",
                     'commission_for_product' => $commission,
                     'total_commission_so_far' => $totalCommission,
-                    'note' => 'No quantity multiplication for data bundles'
+                    'note' => 'No quantity multiplication for data bundles',
+                    'shop_used' => $shop->id
                 ]);
             } else {
                 Log::warning('No agent product found for commission calculation', [
                     'product_id' => $product->id,
                     'agent_id' => $order->agent_id,
-                    'agent_shop_id' => $order->agent->agentShop ? $order->agent->agentShop->id : null,
-                    'available_agent_products' => $order->agent->agentShop ? $order->agent->agentShop->agentProducts->pluck('product_id')->toArray() : []
+                    'shop_id' => $shop->id,
+                    'available_agent_products' => $shop->agentProducts->pluck('product_id')->toArray()
                 ]);
             }
         }
@@ -141,6 +218,79 @@ class CommissionService
         Log::info('=== COMMISSION SERVICE DEBUG END ===', [
             'order_id' => $order->id,
             'final_total_commission' => $totalCommission
+        ]);
+
+        return $totalCommission;
+    }
+
+    private function calculateCommissionAmountFromShop(Order $order, $shop = null)
+    {
+        $totalCommission = 0;
+        
+        Log::info('=== COMMISSION SERVICE FROM SHOP DEBUG START ===', [
+            'order_id' => $order->id,
+            'agent_id' => $order->agent_id,
+            'shop_id' => $shop ? $shop->id : null,
+            'products_count' => $order->products->count()
+        ]);
+
+        // Use the provided shop, or fall back to the original logic
+        if (!$shop) {
+            Log::info('No shop provided, falling back to original logic');
+            return $this->calculateCommissionAmount($order);
+        }
+
+        Log::info('Using provided shop for commission calculation', [
+            'shop_id' => $shop->id,
+            'shop_owner_id' => $shop->user_id,
+            'shop_owner_role' => $shop->user ? $shop->user->role : null
+        ]);
+
+        foreach ($order->products as $product) {
+            Log::info('Processing product for commission from shop', [
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'base_price' => $product->price,
+                'pivot_price' => $product->pivot->price,
+                'pivot_quantity' => $product->pivot->quantity,
+                'shop_id' => $shop->id
+            ]);
+            
+            $agentProduct = $shop->agentProducts()
+                ->where('product_id', $product->id)
+                ->first();
+
+            if ($agentProduct) {
+                // Commission = agent_price - base_price (NO quantity multiplication for data bundles)
+                $commission = $agentProduct->agent_price - $product->pivot->price;
+                $totalCommission += max(0, $commission);
+                
+                Log::info('Agent product found in shop - commission calculated', [
+                    'product_id' => $product->id,
+                    'agent_price' => $agentProduct->agent_price,
+                    'base_price' => $product->price,
+                    'pivot_price' => $product->pivot->price,
+                    'quantity' => $product->pivot->quantity,
+                    'calculation' => "({$agentProduct->agent_price} - {$product->pivot->price})",
+                    'commission_for_product' => $commission,
+                    'total_commission_so_far' => $totalCommission,
+                    'note' => 'No quantity multiplication for data bundles',
+                    'shop_used' => $shop->id
+                ]);
+            } else {
+                Log::warning('No agent product found in shop for commission calculation', [
+                    'product_id' => $product->id,
+                    'agent_id' => $order->agent_id,
+                    'shop_id' => $shop->id,
+                    'available_agent_products' => $shop->agentProducts->pluck('product_id')->toArray()
+                ]);
+            }
+        }
+        
+        Log::info('=== COMMISSION SERVICE FROM SHOP DEBUG END ===', [
+            'order_id' => $order->id,
+            'final_total_commission' => $totalCommission,
+            'shop_id' => $shop->id
         ]);
 
         return $totalCommission;

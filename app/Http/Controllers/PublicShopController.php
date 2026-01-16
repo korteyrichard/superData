@@ -78,6 +78,7 @@ class PublicShopController extends Controller
         session([
             'pending_agent_order' => [
                 'agent_id' => $shop->user_id,
+                'agent_username' => $request->agent_username, // Store the shop username
                 'product_id' => $product->id,
                 'quantity' => $request->quantity,
                 'price' => $agentProduct->agent_price,
@@ -139,6 +140,17 @@ class PublicShopController extends Controller
             $orderData = session('pending_agent_order');
             
             if ($orderData && $orderData['reference'] === $reference) {
+                // Get the shop where the order was made from using the stored username
+                $shop = AgentShop::where('username', $orderData['agent_username'])->first();
+                
+                if (!$shop) {
+                    Log::error('Shop not found for commission calculation', [
+                        'agent_username' => $orderData['agent_username'],
+                        'order_reference' => $reference
+                    ]);
+                    return redirect()->route('home')->with('error', 'Shop not found');
+                }
+                
                 // Create order record with proper agent_id for commission tracking
                 $order = Order::create([
                     'user_id' => $orderData['agent_id'], // Assign to agent whose shop the order was made from
@@ -162,7 +174,8 @@ class PublicShopController extends Controller
                 // Use CommissionService for consistent commission calculation
                 $order->load('agent.agentShop.agentProducts', 'products');
                 $commissionService = new \App\Services\CommissionService();
-                $commission = $commissionService->calculateAndCreateCommission($order);
+                // Pass the shop information to the commission service
+                $commission = $commissionService->calculateAndCreateCommissionFromShop($order, $shop);
 
                 // Clear session
                 session()->forget('pending_agent_order');

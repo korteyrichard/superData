@@ -13,6 +13,8 @@ interface AdminAgentsProps extends PageProps {
             commissions_sum_amount: number;
             referral_commissions_sum_amount: number;
             total_commissions: number;
+            available_commissions: number;
+            withdrawn_commissions: number;
         })[];
         current_page: number;
         last_page: number;
@@ -75,7 +77,7 @@ export default function AdminAgents({ auth, agents }: AdminAgentsProps) {
 
             <div className="space-y-6">
                 {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-sm font-medium">Total Agents</CardTitle>
@@ -106,6 +108,28 @@ export default function AdminAgents({ auth, agents }: AdminAgentsProps) {
                             </div>
                         </CardContent>
                     </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-sm font-medium text-green-600">Total Available</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-green-600">
+                                ${agents.data.reduce((sum, agent) => sum + Number(agent.available_commissions || 0), 0).toFixed(2)}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-sm font-medium text-blue-600">Total Withdrawn</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-blue-600">
+                                ${agents.data.reduce((sum, agent) => sum + Number(agent.withdrawn_commissions || 0), 0).toFixed(2)}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Agents Table */}
@@ -122,6 +146,8 @@ export default function AdminAgents({ auth, agents }: AdminAgentsProps) {
                                         <th className="text-left p-2">Shop Name</th>
                                         <th className="text-left p-2">Username</th>
                                         <th className="text-left p-2">Total Commissions</th>
+                                        <th className="text-left p-2">Available</th>
+                                        <th className="text-left p-2">Withdrawn</th>
                                         <th className="text-left p-2">Status</th>
                                         <th className="text-left p-2">Joined</th>
                                         <th className="text-left p-2">Actions</th>
@@ -151,6 +177,12 @@ export default function AdminAgents({ auth, agents }: AdminAgentsProps) {
                                             </td>
                                             <td className="p-2 font-semibold">
                                                 ${Number(agent.total_commissions || 0).toFixed(2)}
+                                            </td>
+                                            <td className="p-2 font-medium text-green-600">
+                                                ${Number(agent.available_commissions || 0).toFixed(2)}
+                                            </td>
+                                            <td className="p-2 font-medium text-blue-600">
+                                                ${Number(agent.withdrawn_commissions || 0).toFixed(2)}
                                             </td>
                                             <td className="p-2">
                                                 <Badge variant={agent.agent_shop?.is_active ? "default" : "secondary"}>
