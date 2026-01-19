@@ -196,7 +196,7 @@ export default function AdminAgents({ auth, agents }: AdminAgentsProps) {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => window.open(`/admin/agents/${agent.id}/commissions`, '_blank')}
+                                                    onClick={() => window.open(`/admin/dealers/${agent.id}/commissions`, '_blank')}
                                                 >
                                                     View Commissions
                                                 </Button>

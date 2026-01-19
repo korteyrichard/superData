@@ -44,6 +44,12 @@ Route::middleware(['auth', 'verified', 'role:dealer'])->group(function () {
     Route::get('/dealer/referrals', [\App\Http\Controllers\DealerWebController::class, 'referrals'])->name('dealer.referrals');
     Route::post('/dealer/referrals/generate', [\App\Http\Controllers\DealerWebController::class, 'generateReferralCode'])->name('dealer.referrals.generate');
     
+    // Shop management routes
+    Route::get('/dealer/shop/create', [\App\Http\Controllers\ShopManagementController::class, 'create'])->name('dealer.shop.create');
+    Route::post('/dealer/shop', [\App\Http\Controllers\ShopManagementController::class, 'store'])->name('dealer.shop.store');
+    Route::get('/dealer/shop/edit', [\App\Http\Controllers\ShopManagementController::class, 'edit'])->name('dealer.shop.edit');
+    Route::put('/dealer/shop', [\App\Http\Controllers\ShopManagementController::class, 'update'])->name('dealer.shop.update');
+    
     // Web-based dealer actions (no API key required)
     Route::post('/dealer/withdraw', [\App\Http\Controllers\DealerWebController::class, 'requestWithdrawal'])->name('dealer.withdraw');
     Route::post('/dealer/products', [\App\Http\Controllers\DealerWebController::class, 'addProduct'])->name('dealer.products.add');

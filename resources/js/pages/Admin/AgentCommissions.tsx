@@ -10,7 +10,7 @@ interface Commission {
     created_at: string;
     order: {
         id: number;
-        total_amount: string;
+        total: string;
         created_at: string;
     };
 }
@@ -21,7 +21,12 @@ interface Props extends PageProps {
         name: string;
         email: string;
     };
-    commissions: Commission[];
+    commissions: {
+        data: Commission[];
+        current_page: number;
+        last_page: number;
+        total: number;
+    };
 }
 
 export default function AgentCommissions({ auth, agent, commissions }: Props) {
@@ -58,13 +63,13 @@ export default function AgentCommissions({ auth, agent, commissions }: Props) {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {Array.isArray(commissions) && commissions.map((commission) => (
+                                        {Array.isArray(commissions.data) && commissions.data.map((commission) => (
                                             <tr key={commission.id}>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                     #{commission.order.id}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    GH₵{commission.order.total_amount}
+                                                    GH₵{commission.order.total}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     GH₵{commission.amount}
@@ -77,7 +82,7 @@ export default function AgentCommissions({ auth, agent, commissions }: Props) {
                                     </tbody>
                                 </table>
                                 
-                                {(!Array.isArray(commissions) || commissions.length === 0) && (
+                                {(!Array.isArray(commissions.data) || commissions.data.length === 0) && (
                                     <div className="text-center py-8 text-gray-500">
                                         No commissions found for this agent.
                                     </div>

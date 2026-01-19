@@ -6,6 +6,13 @@ import { createRoot } from 'react-dom/client';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+// Suppress checkout popup config errors
+window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.message?.includes('No checkout popup config found')) {
+        event.preventDefault();
+    }
+});
+
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),

@@ -16,12 +16,18 @@ class PublicShopController extends Controller
 {
     public function show($username)
     {
-        $shop = AgentShop::where('username', $username)
-            ->where('is_active', true)
+        $shop = AgentShop::where('username', '=', $username)
+            ->where('is_active', '=', true)
             ->with(['user', 'agentProducts.product'])
             ->first();
 
         if (!$shop) {
+            // Check if the current authenticated user is a dealer without a shop
+            if (auth()->check() && auth()->user()->role === 'dealer' && !auth()->user()->agentShop) {
+                return redirect()->route('dealer.dashboard')
+                    ->with('message', 'You need to create a shop first. Go to the dealer dashboard to set up your shop.');
+            }
+            
             abort(404, 'Shop not found');
         }
 
@@ -43,7 +49,8 @@ class PublicShopController extends Controller
             'shop' => [
                 'name' => $shop->name,
                 'username' => $shop->username,
-                'agent_name' => $shop->user->name
+                'agent_name' => $shop->user->name,
+                'color' => $shop->color
             ],
             'products' => $products,
             'auth' => [
@@ -62,7 +69,12 @@ class PublicShopController extends Controller
             'customer_email' => 'required|email'
         ]);
 
-        $shop = AgentShop::where('username', $request->agent_username)->first();
+        $shop = AgentShop::where('username', '=', $request->agent_username)->first();
+        
+        if (!$shop) {
+            return redirect()->back()->with('error', 'Shop not found');
+        }
+        
         $product = Product::findOrFail($request->product_id);
         
         $agentProduct = $shop->agentProducts()->where('product_id', $product->id)->first();
@@ -141,7 +153,7 @@ class PublicShopController extends Controller
             
             if ($orderData && $orderData['reference'] === $reference) {
                 // Get the shop where the order was made from using the stored username
-                $shop = AgentShop::where('username', $orderData['agent_username'])->first();
+                $shop = AgentShop::where('username', '=', $orderData['agent_username'])->first();
                 
                 if (!$shop) {
                     Log::error('Shop not found for commission calculation', [

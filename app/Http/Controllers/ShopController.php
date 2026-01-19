@@ -11,8 +11,8 @@ class ShopController extends Controller
 
     public function show($username)
     {
-        $shop = AgentShop::where('username', $username)
-            ->where('is_active', true)
+        $shop = AgentShop::where('username', '=', $username)
+            ->where('is_active', '=', true)
             ->with(['user', 'agentProducts.product'])
             ->first();
 
@@ -37,7 +37,8 @@ class ShopController extends Controller
             'shop' => [
                 'name' => $shop->name,
                 'username' => $shop->username,
-                'agent_name' => $shop->user->name
+                'agent_name' => $shop->user->name,
+                'color' => $shop->color
             ],
             'products' => $products
         ]);

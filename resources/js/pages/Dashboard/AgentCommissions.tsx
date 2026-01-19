@@ -24,9 +24,15 @@ interface AgentCommissionsProps extends PageProps {
         last_page: number;
         total: number;
     };
+    totals: {
+        total_earnings: number;
+        available_earnings: number;
+        todays_earnings: number;
+        total_orders: number;
+    };
 }
 
-export default function AgentCommissions({ auth, commissions }: AgentCommissionsProps) {
+export default function AgentCommissions({ auth, commissions, totals }: AgentCommissionsProps) {
     const getStatusBadge = (status: string) => {
         const colors = {
             pending: 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg',
@@ -41,13 +47,10 @@ export default function AgentCommissions({ auth, commissions }: AgentCommissions
         );
     };
 
-    const totalEarnings = commissions.data.reduce((sum, c) => sum + Number(c.amount), 0);
-    const availableEarnings = commissions.data
-        .filter(c => c.status === 'available')
-        .reduce((sum, c) => sum + Number(c.amount), 0);
-    const todaysEarnings = commissions.data
-        .filter(c => new Date(c.created_at).toDateString() === new Date().toDateString())
-        .reduce((sum, c) => sum + Number(c.amount), 0);
+    // Use totals from backend instead of calculating from paginated data
+    const totalEarnings = Number(totals.total_earnings);
+    const availableEarnings = Number(totals.available_earnings);
+    const todaysEarnings = Number(totals.todays_earnings);
 
     return (
         <DashboardLayout
@@ -89,7 +92,7 @@ export default function AgentCommissions({ auth, commissions }: AgentCommissions
                                 <CardTitle className="text-xs font-medium text-indigo-100">Total Orders</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{commissions.total}</div>
+                                <div className="text-2xl font-bold">{totals.total_orders}</div>
                                 <p className="text-indigo-100 text-xs mt-1">Commission orders</p>
                             </CardContent>
                         </Card>

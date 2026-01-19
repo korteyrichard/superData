@@ -125,7 +125,16 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                     {/* Shop URL Section */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Your Shop URL</CardTitle>
+                            <div className="flex justify-between items-center">
+                                <CardTitle>Your Shop URL</CardTitle>
+                                <Button 
+                                    onClick={() => window.location.href = '/dealer/shop/edit'}
+                                    variant="outline"
+                                    size="sm"
+                                >
+                                    Edit Shop
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-3">

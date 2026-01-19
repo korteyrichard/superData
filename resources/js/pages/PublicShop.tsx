@@ -21,6 +21,7 @@ interface Shop {
     name: string;
     username: string;
     agent_name: string;
+    color?: string;
 }
 
 interface PublicShopProps {
@@ -97,19 +98,41 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
         <>
             <Head title={`${shop.name} - SuperData Agent Shop`} />
             
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-                <div className="bg-white shadow-lg border-b border-gray-100">
+            <div 
+                className="min-h-screen"
+                style={{ 
+                    background: shop.color 
+                        ? `linear-gradient(135deg, ${shop.color}20, ${shop.color}10, #ffffff)` 
+                        : 'linear-gradient(135deg, #EFF6FF, #F0FDF4, #ffffff)' 
+                }}
+            >
+                <div 
+                    className="shadow-lg border-b border-gray-100"
+                    style={{
+                        backgroundColor: shop.color || '#3B82F6'
+                    }}
+                >
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                         <div className="text-center">
-                            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-green-500 rounded-full mb-4">
+                            <div 
+                                className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
+                                style={{ 
+                                    background: shop.color ? `linear-gradient(135deg, ${shop.color}, ${shop.color}dd)` : 'linear-gradient(135deg, #3B82F6, #10B981)'
+                                }}
+                            >
                                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                             </div>
-                            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">{shop.name}</h1>
-                            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-green-100 rounded-full">
+                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">{shop.name}</h1>
+                            <div 
+                                className="inline-flex items-center px-4 py-2 rounded-full"
+                                style={{ 
+                                    backgroundColor: 'rgba(255, 255, 255, 0.2)'
+                                }}
+                            >
                                 <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                                <span className="text-sm font-semibold text-gray-700">Official Agent Shop</span>
+                                <span className="text-sm font-semibold text-white">Official Agent Shop</span>
                             </div>
                         </div>
                     </div>
@@ -171,11 +194,15 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                             </div>
 
                                             <Button 
-                                                className={`w-full font-bold py-2 text-sm rounded-xl shadow-md transition-all duration-300 transform hover:scale-105 ${
-                                                    product.status === 'IN STOCK'
-                                                        ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white hover:shadow-lg'
-                                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                }`}
+                                                className="w-full font-bold py-2 text-sm rounded-xl shadow-md transition-all duration-300 transform hover:scale-105 text-white hover:shadow-lg"
+                                                style={{
+                                                    background: product.status === 'IN STOCK' && shop.color 
+                                                        ? `linear-gradient(135deg, ${shop.color}, ${shop.color}dd)` 
+                                                        : product.status === 'IN STOCK' 
+                                                        ? 'linear-gradient(135deg, #10B981, #059669)' 
+                                                        : '#D1D5DB',
+                                                    color: product.status !== 'IN STOCK' ? '#6B7280' : 'white'
+                                                }}
                                                 onClick={() => handlePurchase(product)}
                                                 disabled={product.status !== 'IN STOCK'}
                                             >
@@ -212,7 +239,14 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                     <div className="flex min-h-full items-center justify-center p-4">
                         <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl transform transition-all my-8">
                         <div className="text-center mb-6">
-                            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div 
+                                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                                style={{
+                                    background: shop.color 
+                                        ? `linear-gradient(135deg, ${shop.color}, ${shop.color}dd)` 
+                                        : 'linear-gradient(135deg, #3B82F6, #10B981)'
+                                }}
+                            >
                                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
                                 </svg>
@@ -255,9 +289,20 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Enter the phone number that will receive the data/airtime</p>
                             </div>
-                            <div className="bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-2xl border border-blue-200">
+                            <div 
+                                className="p-6 rounded-2xl border"
+                                style={{
+                                    backgroundColor: shop.color ? `${shop.color}15` : '#EFF6FF',
+                                    borderColor: shop.color ? `${shop.color}50` : '#BFDBFE'
+                                }}
+                            >
                                 <div className="flex items-center justify-between mb-3">
-                                    <span className="text-blue-700 font-bold text-lg">💰 Order Summary</span>
+                                    <span 
+                                        className="font-bold text-lg"
+                                        style={{ color: shop.color || '#1D4ED8' }}
+                                    >
+                                        💰 Order Summary
+                                    </span>
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between">
@@ -268,8 +313,14 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                         <span className="text-gray-600">Network:</span>
                                         <span className="font-semibold">{selectedProduct.network}</span>
                                     </div>
-                                    <div className="border-t border-blue-200 pt-2 mt-3">
-                                        <div className="flex justify-between text-2xl font-black text-blue-600">
+                                    <div 
+                                        className="border-t pt-2 mt-3"
+                                        style={{ borderColor: shop.color ? `${shop.color}50` : '#BFDBFE' }}
+                                    >
+                                        <div 
+                                            className="flex justify-between text-2xl font-black"
+                                            style={{ color: shop.color || '#1D4ED8' }}
+                                        >
                                             <span>Total:</span>
                                             <span>₵{Number(selectedProduct.agent_price).toFixed(2)}</span>
                                         </div>
@@ -288,7 +339,12 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                 <Button 
                                     type="submit" 
                                     disabled={processing} 
-                                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                    className="flex-1 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                    style={{
+                                        background: shop.color 
+                                            ? `linear-gradient(135deg, ${shop.color}, ${shop.color}dd)` 
+                                            : 'linear-gradient(135deg, #10B981, #059669)'
+                                    }}
                                 >
                                     {processing ? '⏳ Processing...' : '🚀 Place Order'}
                                 </Button>

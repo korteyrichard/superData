@@ -86,8 +86,7 @@ export default function AdminCommissions(props: AdminCommissionsProps) {
         filterStatus
     } = props;
     
-    // Debug: log all props to see what's being received
-    console.log('Admin Commissions Props:', props);
+
     const { post, processing } = useForm();
     const [activeTab, setActiveTab] = useState('orders');
 

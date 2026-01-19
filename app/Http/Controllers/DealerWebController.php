@@ -27,14 +27,9 @@ class DealerWebController extends Controller
     {
         $user = $request->user();
         
-        // If dealer doesn't have a shop, create one automatically
+        // If dealer doesn't have a shop, redirect to shop creation
         if ($user->role === 'dealer' && !$user->agentShop) {
-            try {
-                $this->agentService->createShopForAgent($user);
-                $user->refresh();
-            } catch (\Exception $e) {
-                return redirect()->route('dashboard')->with('error', 'Failed to create shop: ' . $e->getMessage());
-            }
+            return redirect()->route('dealer.shop.create');
         }
         
         if (!$user->agentShop) {
@@ -64,13 +59,29 @@ class DealerWebController extends Controller
 
     public function commissions(Request $request)
     {
-        $commissions = Commission::where('agent_id', $request->user()->id)
+        $user = $request->user();
+        
+        $commissions = Commission::where('agent_id', $user->id)
             ->with('order')
             ->latest()
             ->paginate(20);
 
+        // Calculate totals from all commissions, not just paginated data
+        $totalEarnings = $user->commissions()->sum('amount');
+        $availableEarnings = $user->commissions()->where('status', 'available')->sum('amount');
+        $todaysEarnings = $user->commissions()
+            ->whereDate('created_at', today())
+            ->sum('amount');
+        $totalOrders = $user->commissions()->count();
+
         return Inertia::render('Dashboard/AgentCommissions', [
-            'commissions' => $commissions
+            'commissions' => $commissions,
+            'totals' => [
+                'total_earnings' => $totalEarnings,
+                'available_earnings' => $availableEarnings,
+                'todays_earnings' => $todaysEarnings,
+                'total_orders' => $totalOrders
+            ]
         ]);
     }
 

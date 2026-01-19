@@ -40,11 +40,11 @@ class OrdersController extends Controller
             default => null
         };
         
-        $productQuery = Product::where('id', $request->product_id)
-            ->where('status', 'IN STOCK');
+        $productQuery = Product::where('id', $request->validated()['product_id'])
+            ->where('status', '=', 'IN STOCK');
             
         if ($productType) {
-            $productQuery->where('product_type', $productType);
+            $productQuery->where('product_type', '=', $productType);
         }
         
         $product = $productQuery->first();
@@ -178,11 +178,11 @@ class OrdersController extends Controller
             default => null
         };
         
-        $productsQuery = Product::where('status', 'IN STOCK')
+        $productsQuery = Product::where('status', '=', 'IN STOCK')
             ->select('id', 'name', 'price', 'network', 'product_type', 'description', 'quantity');
             
         if ($productType) {
-            $productsQuery->where('product_type', $productType);
+            $productsQuery->where('product_type', '=', $productType);
         }
         
         $products = $productsQuery->get();

@@ -20,16 +20,17 @@ class OrdersController extends Controller
         
         $orders = Order::with(['products' => function($query) {
             $query->withPivot('quantity', 'price', 'beneficiary_number');
-        }])->where('user_id', $userId);
+        }])->where('user_id', '=', $userId);
 
         // Search by order ID
         if ($request->has('order_id') && $request->input('order_id') !== '') {
-            $orders->where('id', $request->input('order_id'));
+            $orders->where('id', '=', $request->input('order_id'));
         }
 
         // Search by beneficiary number
         if ($request->has('beneficiary_number') && $request->input('beneficiary_number') !== '') {
-            $orders->where('beneficiary_number', 'like', '%' . $request->input('beneficiary_number') . '%');
+            $searchTerm = '%' . $request->input('beneficiary_number') . '%';
+            $orders->where('beneficiary_number', 'like', $searchTerm);
         }
 
         $orders = $orders->latest()->get();
@@ -62,7 +63,7 @@ class OrdersController extends Controller
                 return redirect()->back()->with('error', 'Authentication required');
             }
 
-            $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
+            $cartItems = Cart::where('user_id', '=', $user->id)->with('product')->get();
             Log::info('Cart items fetched.', ['cartItemsCount' => $cartItems->count(), 'user_id' => $user->id]);
 
             if ($cartItems->isEmpty()) {
@@ -82,12 +83,13 @@ class OrdersController extends Controller
                 ]);
             }
 
-            // Calculate total using cart item prices only
-            $total = $cartItems->sum(function ($item) {
-                $price = (float) $item->price;
-                Log::info('Calculating item total', ['price' => $price, 'item_total' => $price]);
-                return $price;
-            });
+            // Calculate total using cart item prices with fallback to product price
+            $total = 0;
+            foreach ($cartItems as $item) {
+                $price = $item->price ?? $item->product->price ?? 0;
+                $price = (float) $price;
+                $total += $price;
+            }
             Log::info('Total calculated.', ['total' => $total, 'walletBalance' => $user->wallet_balance]);
 
             // Check if user has enough wallet balance
@@ -161,42 +163,13 @@ class OrdersController extends Controller
                     'beneficiary_number' => $item->beneficiary_number,
                 ]);
                 
-                // Create agent commission if item was purchased through agent shop
-                if ($item->agent_id) {
-                    $basePrice = (float) $item->product->price;
-                    $commissionAmount = $price - $basePrice;
-                    
-                    // DEBUG: Log commission calculation details
-                    Log::info('=== COMMISSION CALCULATION DEBUG ===', [
-                        'order_id' => $order->id,
-                        'product_name' => $item->product->name ?? 'unknown',
-                        'cart_price' => $price,
-                        'product_base_price' => $basePrice,
-                        'calculation' => "({$price} - {$basePrice})",
-                        'commission_amount' => $commissionAmount,
-                        'agent_id' => $item->agent_id
-                    ]);
-                    
-                    if ($commissionAmount > 0) {
-                        \App\Models\Commission::create([
-                            'agent_id' => $item->agent_id,
-                            'order_id' => $order->id,
-                            'amount' => $commissionAmount,
-                            'status' => 'pending'
-                        ]);
-                        Log::info('Agent commission created.', [
-                            'agentId' => $item->agent_id, 
-                            'orderId' => $order->id, 
-                            'commission' => $commissionAmount
-                        ]);
-                    }
-                }
+
                 
                 Log::info('Product attached to order.', ['orderId' => $order->id, 'productId' => $item->product_id, 'beneficiaryNumber' => $item->beneficiary_number]);
             }
 
             // Clear user's cart
-            Cart::where('user_id', $user->id)->delete();
+            Cart::where('user_id', '=', $user->id)->delete();
             Log::info('Cart cleared.', ['userId' => $user->id]);
 
             // Create a transaction record for the order
@@ -206,7 +179,7 @@ class OrdersController extends Controller
                 'amount' => $total,
                 'status' => 'completed',
                 'type' => 'order',
-                'description' => 'Order placed for ' . $order->network . ' data/airtime.',
+                'description' => 'Order placed for data/airtime.',
             ]);
             Log::info('Transaction created for order.', ['orderId' => $order->id, 'userId' => $user->id]);
 

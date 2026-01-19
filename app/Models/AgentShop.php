@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AgentShop extends Model
 {
-    protected $fillable = ['user_id', 'name', 'username', 'is_active'];
+    protected $fillable = ['user_id', 'name', 'username', 'is_active', 'color'];
 
     protected $casts = [
         'is_active' => 'boolean',
