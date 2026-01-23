@@ -20,6 +20,8 @@ interface Order {
   created_at: string;
   network?: string;
   beneficiary_number?: string;
+  customer_email?: string;
+  paystack_reference?: string;
   products: Product[];
 }
 
@@ -153,6 +155,12 @@ export default function OrdersPage() {
                           <div className="font-semibold">Order Details</div>
                           <div>Status: <span className="font-semibold">{order.status}</span></div>
                           <div>Total: <span className="font-semibold">${order.total}</span></div>
+                          {order.customer_email && (
+                            <div>Customer Email: <span className="font-semibold">{order.customer_email}</span></div>
+                          )}
+                          {order.paystack_reference && (
+                            <div>Payment Reference: <span className="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{order.paystack_reference}</span></div>
+                          )}
                           <div>Products:</div>
                           <ul className="ml-4 list-disc space-y-2">
                             {order.products.map(product => (

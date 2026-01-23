@@ -20,7 +20,8 @@ class OrdersController extends Controller
         
         $orders = Order::with(['products' => function($query) {
             $query->withPivot('quantity', 'price', 'beneficiary_number');
-        }])->where('user_id', '=', $userId);
+        }])->where('user_id', '=', $userId)
+          ->select('id', 'user_id', 'total', 'status', 'created_at', 'network', 'beneficiary_number', 'customer_email', 'paystack_reference');
 
         // Search by order ID
         if ($request->has('order_id') && $request->input('order_id') !== '') {

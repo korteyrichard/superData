@@ -78,6 +78,8 @@ Route::middleware(['auth', 'verified', 'role:dealer'])->group(function () {
 // Public shop route
 Route::get('/shop/{username}', [\App\Http\Controllers\PublicShopController::class, 'show'])->name('public.shop');
 Route::post('/shop/purchase', [\App\Http\Controllers\PublicShopController::class, 'purchase'])->name('shop.purchase');
+Route::post('/shop/track-order', [\App\Http\Controllers\PublicShopController::class, 'trackOrder'])->name('shop.track.order');
+Route::post('/shop/create-order-from-reference', [\App\Http\Controllers\PublicShopController::class, 'createOrderFromReference'])->name('shop.create.order.reference');
 Route::get('/agent/order/callback', [\App\Http\Controllers\PublicShopController::class, 'handleOrderCallback'])->name('agent.order.callback');
 Route::get('/agent/order/success/{order}', [\App\Http\Controllers\PublicShopController::class, 'orderSuccess'])->name('agent.order.success');
 

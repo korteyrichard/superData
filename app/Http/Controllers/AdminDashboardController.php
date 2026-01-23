@@ -111,7 +111,7 @@ class AdminDashboardController extends Controller
     {
         $orders = Order::with(['products' => function($query) {
             $query->withPivot('quantity', 'price', 'beneficiary_number');
-        }, 'user', 'commission'])->latest();
+        }, 'user', 'commission'])->select('id', 'user_id', 'agent_id', 'total', 'status', 'api_status', 'created_at', 'network', 'beneficiary_number', 'customer_email', 'paystack_reference')->latest();
 
         if ($request->has('network') && $request->input('network') !== '') {
             $orders->where('network', 'like', '%' . $request->input('network') . '%');
@@ -131,10 +131,16 @@ class AdminDashboardController extends Controller
             $orders->where('beneficiary_number', 'like', '%' . $request->input('beneficiary_number') . '%');
         }
 
+        // Filter by recovered orders (orders with paystack_reference)
+        if ($request->has('recovered') && $request->input('recovered') === 'true') {
+            $orders->whereNotNull('paystack_reference');
+        }
+
         // Calculate daily totals
         $today = now()->today();
         $dailySales = Order::whereDate('created_at', $today)->sum('total');
         $dailyCommissions = \App\Models\Commission::whereDate('created_at', $today)->sum('amount');
+        $recoveredOrdersCount = Order::whereNotNull('paystack_reference')->count();
 
         return Inertia::render('Admin/Orders', [
             'orders' => $orders->paginate(50),
@@ -142,8 +148,10 @@ class AdminDashboardController extends Controller
             'filterStatus' => $request->input('status', ''),
             'searchOrderId' => $request->input('order_id', ''),
             'searchBeneficiaryNumber' => $request->input('beneficiary_number', ''),
+            'filterRecovered' => $request->input('recovered', ''),
             'dailySales' => $dailySales,
-            'dailyCommissions' => $dailyCommissions
+            'dailyCommissions' => $dailyCommissions,
+            'recoveredOrdersCount' => $recoveredOrdersCount
         ]);
     }
 

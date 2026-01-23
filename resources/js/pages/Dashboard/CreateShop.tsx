@@ -22,6 +22,7 @@ export default function CreateShop({ auth }: PageProps) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         username: '',
+        whatsapp_contact: '',
         color: '#3B82F6'
     });
 
@@ -85,6 +86,22 @@ export default function CreateShop({ auth }: PageProps) {
                                 </p>
                                 {errors.username && (
                                     <p className="text-sm text-red-600 mt-1">{errors.username}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <Label htmlFor="whatsapp_contact">WhatsApp Contact (Optional)</Label>
+                                <Input
+                                    id="whatsapp_contact"
+                                    value={data.whatsapp_contact}
+                                    onChange={(e) => setData('whatsapp_contact', e.target.value)}
+                                    placeholder="e.g., +233501234567 or 0501234567"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Customers will see a "Contact Dealer" button on your shop page
+                                </p>
+                                {errors.whatsapp_contact && (
+                                    <p className="text-sm text-red-600 mt-1">{errors.whatsapp_contact}</p>
                                 )}
                             </div>
 

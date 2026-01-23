@@ -31,7 +31,8 @@ class ShopManagementController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:50|unique:agent_shops,username|regex:/^[a-zA-Z0-9_-]+$/',
-            'color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/'
+            'color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'whatsapp_contact' => 'nullable|string|max:15|regex:/^[0-9+\-\s()]+$/'
         ]);
 
         $shop = AgentShop::create([
@@ -39,6 +40,7 @@ class ShopManagementController extends Controller
             'name' => $validated['name'],
             'username' => $validated['username'],
             'color' => $validated['color'],
+            'whatsapp_contact' => $validated['whatsapp_contact'],
             'is_active' => true
         ]);
 
@@ -70,6 +72,7 @@ class ShopManagementController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'whatsapp_contact' => 'nullable|string|max:15|regex:/^[0-9+\-\s()]+$/',
             'is_active' => 'boolean'
         ]);
 

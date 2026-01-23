@@ -22,6 +22,8 @@ interface Order {
   created_at: string;
   network?: string;
   beneficiary_number?: string;
+  customer_email?: string;
+  paystack_reference?: string;
   products: Product[];
   user: {
     id: number;
@@ -429,6 +431,12 @@ export default function AdminOrders() {
                             <p><strong>API Status:</strong> <span className={`px-2 py-1 rounded-full text-xs font-medium ${getApiStatusColor(order.api_status)}`}>
                               {order.api_status.charAt(0).toUpperCase() + order.api_status.slice(1)}
                             </span></p>
+                            {order.customer_email && (
+                              <p><strong>Customer Email:</strong> {order.customer_email}</p>
+                            )}
+                            {order.paystack_reference && (
+                              <p><strong>Paystack Reference:</strong> <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{order.paystack_reference}</span></p>
+                            )}
                             <p><strong>Products:</strong></p>
                             <ul className="list-disc pl-4 sm:pl-5 space-y-1">
                               {order.products.map((product) => (

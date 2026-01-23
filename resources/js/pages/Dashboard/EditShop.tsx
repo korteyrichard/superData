@@ -12,6 +12,7 @@ interface AgentShop {
     name: string;
     username: string;
     color: string;
+    whatsapp_contact?: string;
     is_active: boolean;
 }
 
@@ -34,6 +35,7 @@ export default function EditShop({ auth, shop }: EditShopProps) {
     const { data, setData, put, processing, errors } = useForm({
         name: shop.name,
         color: shop.color,
+        whatsapp_contact: shop.whatsapp_contact || '',
         is_active: shop.is_active
     });
 
@@ -87,6 +89,22 @@ export default function EditShop({ auth, shop }: EditShopProps) {
                                 <p className="text-xs text-gray-500 mt-1">
                                     Username cannot be changed after creation
                                 </p>
+                            </div>
+
+                            <div>
+                                <Label htmlFor="whatsapp_contact">WhatsApp Contact (Optional)</Label>
+                                <Input
+                                    id="whatsapp_contact"
+                                    value={data.whatsapp_contact}
+                                    onChange={(e) => setData('whatsapp_contact', e.target.value)}
+                                    placeholder="e.g., +233501234567 or 0501234567"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Customers will see a "Contact Dealer" button on your shop page
+                                </p>
+                                {errors.whatsapp_contact && (
+                                    <p className="text-sm text-red-600 mt-1">{errors.whatsapp_contact}</p>
+                                )}
                             </div>
 
                             <div>
