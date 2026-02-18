@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Commission;
 use App\Models\Transaction;
 use App\Services\OrderPusherService;
+use App\Services\CodeCraftOrderPusherService;
 use App\Services\PaystackService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -200,8 +201,13 @@ class PublicShopController extends Controller
 
                 // Push order to external API
                 try {
-                    $orderPusher = new OrderPusherService();
-                    $orderPusher->pushOrderToApi($order);
+                    if ($this->isMtnOrder($order)) {
+                        $orderPusher = new OrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } else {
+                        $orderPusher = new CodeCraftOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    }
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error('Failed to push agent shop order to external API', [
                         'order_id' => $order->id,
@@ -231,6 +237,22 @@ class PublicShopController extends Controller
             'beneficiary_number' => 'required|string|size:10|regex:/^[0-9]{10}$/',
             'paystack_reference' => 'required|string|min:10|max:100'
         ]);
+
+        // Check if reference starts with 'wallet' - reject wallet top-up references
+        if (str_starts_with(strtolower($request->paystack_reference), 'wallet')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid reference. Wallet top-up references cannot be used for order tracking.'
+            ]);
+        }
+
+        // Only allow references that start with 'agent_order'
+        if (!str_starts_with(strtolower($request->paystack_reference), 'agent_order')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid reference format. Please use a valid order reference.'
+            ]);
+        }
 
         try {
             // First, try to find existing order with indexed query
@@ -303,6 +325,22 @@ class PublicShopController extends Controller
             'product_id' => 'required|exists:products,id',
             'agent_username' => 'required|string|exists:agent_shops,username'
         ]);
+
+        // Check if reference starts with 'wallet' - reject wallet top-up references
+        if (str_starts_with(strtolower($request->paystack_reference), 'wallet')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid reference. Wallet top-up references cannot be used for order creation.'
+            ]);
+        }
+
+        // Only allow references that start with 'agent_order'
+        if (!str_starts_with(strtolower($request->paystack_reference), 'agent_order')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid reference format. Please use a valid order reference.'
+            ]);
+        }
 
         try {
             // Verify payment again to ensure security
@@ -415,8 +453,13 @@ class PublicShopController extends Controller
                     'beneficiary' => $request->beneficiary_number
                 ]);
                 
-                $orderPusher = new OrderPusherService();
-                $orderPusher->pushOrderToApi($order);
+                if ($this->isMtnOrder($order)) {
+                    $orderPusher = new OrderPusherService();
+                    $orderPusher->pushOrderToApi($order);
+                } else {
+                    $orderPusher = new CodeCraftOrderPusherService();
+                    $orderPusher->pushOrderToApi($order);
+                }
                 
                 Log::info('Successfully pushed recovered order to API', ['order_id' => $order->id]);
             } catch (\Exception $e) {
@@ -461,5 +504,11 @@ class PublicShopController extends Controller
                 'message' => 'Failed to create order. Please contact support if this issue persists.'
             ], 500);
         }
+    }
+
+    private function isMtnOrder($order)
+    {
+        $network = strtolower($order->network ?? '');
+        return stripos($network, 'mtn') !== false;
     }
 }

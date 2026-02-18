@@ -6,18 +6,24 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Services\CommissionService;
+use App\Services\CodeCraftOrderPusherService;
+use App\Services\CodeCraftOrderStatusSyncService;
 
 class OrderStatusSyncService
 {
     private $jaybartApiKey;
     private $moolreSmsService;
     private $commissionService;
+    private $codeCraftService;
+    private $codeCraftSyncService;
 
     public function __construct()
     {
         $this->jaybartApiKey = env('ORDER_PUSHER_API_KEY', '75dc87ab33239934578afbf81a9dee777d591e4f');
         $this->moolreSmsService = new SmsService();
         $this->commissionService = new CommissionService();
+        $this->codeCraftService = new CodeCraftOrderPusherService();
+        $this->codeCraftSyncService = new CodeCraftOrderStatusSyncService();
     }
 
     public function syncOrderStatuses()
@@ -26,10 +32,21 @@ class OrderStatusSyncService
         
         foreach ($processingOrders as $order) {
             try {
-                $this->syncJaybartOrderStatus($order);
+                if ($this->isCodeCraftOrder($order)) {
+                    $this->syncCodeCraftOrderStatus($order);
+                } else {
+                    $this->syncJaybartOrderStatus($order);
+                }
             } catch (\Exception $e) {
                 Log::error('Failed to sync order status', ['orderId' => $order->id, 'error' => $e->getMessage()]);
             }
+        }
+        
+        // Also run the dedicated CodeCraft sync service
+        try {
+            $this->codeCraftSyncService->syncOrderStatuses();
+        } catch (\Exception $e) {
+            Log::error('Failed to run CodeCraft sync service', ['error' => $e->getMessage()]);
         }
     }
 
@@ -173,5 +190,99 @@ class OrderStatusSyncService
         ]);
 
         return $mappedStatus;
+    }
+
+    private function isCodeCraftOrder($order)
+    {
+        $network = strtolower($order->network ?? '');
+        return in_array($network, ['telecel', 'at data', 'at (big packages)']);
+    }
+
+    private function syncCodeCraftOrderStatus($order)
+    {
+        $referenceId = $this->extractReferenceId($order);
+        
+        Log::info('CodeCraft sync attempt', [
+            'order_id' => $order->id,
+            'reference_id' => $referenceId,
+            'order_network' => $order->network,
+            'order_status' => $order->status
+        ]);
+        
+        if (!$referenceId) {
+            Log::warning('No reference ID found for CodeCraft order', ['orderId' => $order->id]);
+            return;
+        }
+
+        try {
+            $isBigTime = strtolower($order->network) === 'at (big packages)';
+            $responseData = $this->codeCraftService->checkOrderStatus($referenceId, $isBigTime);
+            
+            if ($responseData) {
+                $externalStatus = $responseData['status'] ?? '';
+                $newStatus = $this->mapCodeCraftStatus($externalStatus);
+                
+                Log::info('CodeCraft status mapping', [
+                    'order_id' => $order->id,
+                    'external_status' => $externalStatus,
+                    'mapped_status' => $newStatus,
+                    'current_order_status' => $order->status
+                ]);
+                
+                if ($newStatus && $newStatus !== $order->status) {
+                    $oldStatus = $order->status;
+                    $updateResult = $order->update(['status' => $newStatus]);
+                    Log::info('CodeCraft order status updated', [
+                        'orderId' => $order->id, 
+                        'oldStatus' => $oldStatus, 
+                        'newStatus' => $newStatus,
+                        'update_successful' => $updateResult
+                    ]);
+                    
+                    // Send SMS notification if order is completed
+                    if ($newStatus === 'completed' && $order->user && $order->user->phone) {
+                        try {
+                            $message = "Your order #{$order->id} for {$order->network} data has been completed successfully. Thank you for using DataFraternity!";
+                            $smsResult = $this->moolreSmsService->sendSms($order->user->phone, $message);
+                            Log::info('SMS notification sent for completed order', [
+                                'order_id' => $order->id,
+                                'phone' => $order->user->phone,
+                                'sms_success' => $smsResult
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('Failed to send SMS notification', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+                        }
+                        
+                        // Make commission available when order is completed
+                        $this->commissionService->makeCommissionAvailable($order);
+                    }
+                    
+                    // Reverse commission if order is cancelled
+                    if ($newStatus === 'cancelled') {
+                        $this->commissionService->reverseCommission($order);
+                    }
+                }
+            } else {
+                Log::warning('CodeCraft API returned no data', ['order_id' => $order->id]);
+            }
+        } catch (\Exception $e) {
+            Log::error('CodeCraft status check failed', ['orderId' => $order->id, 'error' => $e->getMessage()]);
+        }
+    }
+
+    private function mapCodeCraftStatus($externalStatus)
+    {
+        $statusMap = [
+            'successful' => 'completed',
+            'completed' => 'completed',
+            'delivered' => 'completed',
+            'processing' => 'processing',
+            'pending' => 'processing',
+            'failed' => 'cancelled',
+            'cancelled' => 'cancelled'
+        ];
+
+        $lowercaseStatus = strtolower($externalStatus);
+        return $statusMap[$lowercaseStatus] ?? null;
     }
 }

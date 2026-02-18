@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Services\OrderPusherService;
+use App\Services\CodeCraftOrderPusherService;
 
 class OrdersController extends Controller
 {
@@ -189,8 +190,13 @@ class OrdersController extends Controller
 
             // Push order to external API
             try {
-                $orderPusher = new OrderPusherService();
-                $orderPusher->pushOrderToApi($order);
+                if ($this->isMtnOrder($order)) {
+                    $orderPusher = new OrderPusherService();
+                    $orderPusher->pushOrderToApi($order);
+                } else {
+                    $orderPusher = new CodeCraftOrderPusherService();
+                    $orderPusher->pushOrderToApi($order);
+                }
             } catch (\Exception $e) {
                 Log::error('Failed to push order to external API', ['error' => $e->getMessage()]);
             }
@@ -209,5 +215,11 @@ class OrdersController extends Controller
             ]);
             return redirect()->back()->with('error', 'Checkout failed: ' . $e->getMessage());
         }
+    }
+
+    private function isMtnOrder($order)
+    {
+        $network = strtolower($order->network ?? '');
+        return stripos($network, 'mtn') !== false;
     }
 }

@@ -152,14 +152,10 @@ class OrderPusherService
         
         if (stripos($productName, 'mtn') !== false) {
             return 3;
-        } elseif (stripos($productName, 'telecel') !== false) {
-            return 2;
-        } elseif (stripos($productName, 'AT Data (Instant)') !== false || stripos($productName, 'airtel') !== false || stripos($productName, 'tigo') !== false) {
-            return 1;
-        } elseif (stripos($productName, 'AT (Big Packages)') !== false) {
-            return 4;
         }
         
-        return 3;
+        // Non-MTN orders should not be processed by this service
+        Log::info('Non-MTN order detected, skipping Jaybart processing', ['product_name' => $productName]);
+        return null;
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Transaction;
 use App\Services\OrderPusherService;
+use App\Services\CodeCraftOrderPusherService;
 use App\Services\CommissionService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -113,8 +114,13 @@ class OrdersController extends Controller
 
             // Push order to external API
             try {
-                $orderPusher = new OrderPusherService();
-                $orderPusher->pushOrderToApi($order);
+                if ($this->isMtnOrder($order)) {
+                    $orderPusher = new OrderPusherService();
+                    $orderPusher->pushOrderToApi($order);
+                } else {
+                    $orderPusher = new CodeCraftOrderPusherService();
+                    $orderPusher->pushOrderToApi($order);
+                }
             } catch (\Exception $e) {
                 Log::error('Failed to push API order to external service', ['error' => $e->getMessage()]);
             }
@@ -188,5 +194,11 @@ class OrdersController extends Controller
         $products = $productsQuery->get();
 
         return $this->successResponse($products);
+    }
+
+    private function isMtnOrder($order)
+    {
+        $network = strtolower($order->network ?? '');
+        return stripos($network, 'mtn') !== false;
     }
 }

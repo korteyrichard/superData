@@ -150,6 +150,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->name('admin.')->group(fun
     Route::get('admin/users/{user}/transactions', [\App\Http\Controllers\AdminDashboardController::class, 'userTransactions'])->name('users.transactions');
     Route::post('admin/orders/export', [\App\Http\Controllers\AdminDashboardController::class, 'exportOrders'])->name('orders.export');
     Route::post('admin/api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleApi'])->name('api.toggle');
+    Route::post('admin/codecraft-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleCodeCraftApi'])->name('codecraft-api.toggle');
     Route::get('admin/alerts', [\App\Http\Controllers\AdminDashboardController::class, 'alerts'])->name('alerts');
     Route::post('admin/alerts', [\App\Http\Controllers\AdminDashboardController::class, 'storeAlert'])->name('alerts.store');
     Route::put('admin/alerts/{alert}', [\App\Http\Controllers\AdminDashboardController::class, 'updateAlert'])->name('alerts.update');

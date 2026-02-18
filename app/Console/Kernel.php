@@ -13,6 +13,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->job(new SyncOrderStatusesJob)->everyFiveMinutes();
         $schedule->job(new ProcessCommissionAvailabilityJob)->hourly();
+        $schedule->command('orders:sync-codecraft-status')->everyFiveMinutes();
     }
 
     protected function commands(): void
