@@ -14,6 +14,8 @@ class Kernel extends ConsoleKernel
         $schedule->job(new SyncOrderStatusesJob)->everyFiveMinutes();
         $schedule->job(new ProcessCommissionAvailabilityJob)->hourly();
         $schedule->command('orders:sync-codecraft-status')->everyFiveMinutes();
+        $schedule->command('orders:sync-codecraft-mtn-status')->everyFiveMinutes();
+        $schedule->command('orders:retry-failed')->hourly();
     }
 
     protected function commands(): void

@@ -68,7 +68,10 @@ class DealerWebController extends Controller
 
         // Calculate totals from all commissions, not just paginated data
         $totalEarnings = $user->commissions()->sum('amount');
-        $availableEarnings = $user->commissions()->where('status', 'available')->sum('amount');
+        $availableEarnings = $user->commissions()
+            ->where('status', 'available')
+            ->selectRaw('SUM(amount - withdrawn_amount) as total')
+            ->value('total') ?? 0;
         $todaysEarnings = $user->commissions()
             ->whereDate('created_at', today())
             ->sum('amount');
@@ -125,6 +128,12 @@ class DealerWebController extends Controller
     public function referrals(Request $request)
     {
         $user = $request->user();
+        
+        // Ensure referral code is generated if not present
+        if (!$user->referral_code) {
+            $user->generateReferralCode();
+        }
+        
         $stats = $this->referralService->getReferralStats($user);
         $referralLink = $this->referralService->generateReferralLink($user);
 
@@ -137,7 +146,8 @@ class DealerWebController extends Controller
                 'referrals' => $stats['referrals'],
                 'commissions' => $stats['commissions']
             ],
-            'referralLink' => $referralLink
+            'referralLink' => $referralLink,
+            'referralCode' => $user->referral_code
         ]);
     }
 

@@ -70,9 +70,23 @@ class WithdrawalService
         foreach ($commissions as $commission) {
             if ($amount <= 0) break;
             
-            if ($commission->amount <= $amount) {
-                $commission->update(['status' => 'withdrawn']);
-                $amount -= $commission->amount;
+            $availableAmount = $commission->amount - $commission->withdrawn_amount;
+            
+            if ($availableAmount <= 0) continue;
+            
+            if ($availableAmount <= $amount) {
+                // Fully withdraw this commission
+                $commission->update([
+                    'withdrawn_amount' => $commission->withdrawn_amount + $availableAmount,
+                    'status' => 'withdrawn'
+                ]);
+                $amount -= $availableAmount;
+            } else {
+                // Partially withdraw this commission
+                $commission->update([
+                    'withdrawn_amount' => $commission->withdrawn_amount + $amount
+                ]);
+                $amount = 0;
             }
         }
 
@@ -86,9 +100,23 @@ class WithdrawalService
             foreach ($referralCommissions as $refCommission) {
                 if ($amount <= 0) break;
                 
-                if ($refCommission->amount <= $amount) {
-                    $refCommission->update(['status' => 'withdrawn']);
-                    $amount -= $refCommission->amount;
+                $availableAmount = $refCommission->amount - $refCommission->withdrawn_amount;
+                
+                if ($availableAmount <= 0) continue;
+                
+                if ($availableAmount <= $amount) {
+                    // Fully withdraw this referral commission
+                    $refCommission->update([
+                        'withdrawn_amount' => $refCommission->withdrawn_amount + $availableAmount,
+                        'status' => 'withdrawn'
+                    ]);
+                    $amount -= $availableAmount;
+                } else {
+                    // Partially withdraw this referral commission
+                    $refCommission->update([
+                        'withdrawn_amount' => $refCommission->withdrawn_amount + $amount
+                    ]);
+                    $amount = 0;
                 }
             }
         }
@@ -102,15 +130,29 @@ class WithdrawalService
         // Restore regular commissions to available
         $commissions = $agent->commissions()
             ->where('status', 'withdrawn')
-            ->orderBy('created_at')
+            ->orderByDesc('created_at')
             ->get();
 
         foreach ($commissions as $commission) {
             if ($amount <= 0) break;
             
-            if ($commission->amount <= $amount) {
-                $commission->update(['status' => 'available']);
-                $amount -= $commission->amount;
+            $withdrawnAmount = $commission->withdrawn_amount;
+            
+            if ($withdrawnAmount <= 0) continue;
+            
+            if ($withdrawnAmount <= $amount) {
+                // Fully restore this commission
+                $commission->update([
+                    'withdrawn_amount' => 0,
+                    'status' => 'available'
+                ]);
+                $amount -= $withdrawnAmount;
+            } else {
+                // Partially restore this commission
+                $commission->update([
+                    'withdrawn_amount' => $withdrawnAmount - $amount
+                ]);
+                $amount = 0;
             }
         }
 
@@ -118,15 +160,29 @@ class WithdrawalService
         if ($amount > 0) {
             $referralCommissions = $agent->referralCommissions()
                 ->where('status', 'withdrawn')
-                ->orderBy('created_at')
+                ->orderByDesc('created_at')
                 ->get();
 
             foreach ($referralCommissions as $refCommission) {
                 if ($amount <= 0) break;
                 
-                if ($refCommission->amount <= $amount) {
-                    $refCommission->update(['status' => 'available']);
-                    $amount -= $refCommission->amount;
+                $withdrawnAmount = $refCommission->withdrawn_amount;
+                
+                if ($withdrawnAmount <= 0) continue;
+                
+                if ($withdrawnAmount <= $amount) {
+                    // Fully restore this referral commission
+                    $refCommission->update([
+                        'withdrawn_amount' => 0,
+                        'status' => 'available'
+                    ]);
+                    $amount -= $withdrawnAmount;
+                } else {
+                    // Partially restore this referral commission
+                    $refCommission->update([
+                        'withdrawn_amount' => $withdrawnAmount - $amount
+                    ]);
+                    $amount = 0;
                 }
             }
         }

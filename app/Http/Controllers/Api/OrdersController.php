@@ -9,6 +9,8 @@ use App\Models\Setting;
 use App\Models\Transaction;
 use App\Services\OrderPusherService;
 use App\Services\CodeCraftOrderPusherService;
+use App\Services\ProdataWorldOrderPusherService;
+use App\Services\DataEasyOrderPusherService;
 use App\Services\CommissionService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -115,8 +117,18 @@ class OrdersController extends Controller
             // Push order to external API
             try {
                 if ($this->isMtnOrder($order)) {
-                    $orderPusher = new OrderPusherService();
-                    $orderPusher->pushOrderToApi($order);
+                    // Check if ProdataWorld API is enabled for MTN
+                    // Check if DataEasy API is enabled for MTN
+                    if (Setting::get('dataeasy_api_enabled', 'false') === 'true') {
+                        $orderPusher = new DataEasyOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } elseif (Setting::get('prodataworld_api_enabled', 'false') === 'true') {
+                        $orderPusher = new ProdataWorldOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } else {
+                        $orderPusher = new OrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    }
                 } else {
                     $orderPusher = new CodeCraftOrderPusherService();
                     $orderPusher->pushOrderToApi($order);

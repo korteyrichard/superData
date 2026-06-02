@@ -124,8 +124,8 @@ export default function AdminCommissions(props: AdminCommissionsProps) {
                             <CardTitle className="text-sm font-medium">Total All Commissions</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">GHS {Number(props.totalCommissions || 0).toFixed(2)}</div>
-                            <p className="text-xs text-muted-foreground">Orders only</p>
+                            <div className="text-2xl font-bold">GHS {Number(props.totalAllCommissions || 0).toFixed(2)}</div>
+                            <p className="text-xs text-muted-foreground">Orders + Referrals</p>
                         </CardContent>
                     </Card>
 
@@ -196,7 +196,7 @@ export default function AdminCommissions(props: AdminCommissionsProps) {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-xl font-bold">{props.totalCommissionCount}</div>
-                                    <p className="text-xs text-muted-foreground">GHS {Number(props.totalCommissions || 0).toFixed(2)}</p>
+                                    <p className="text-xs text-muted-foreground">GHS {Number(props.totalOrderCommissions || 0).toFixed(2)}</p>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -205,7 +205,7 @@ export default function AdminCommissions(props: AdminCommissionsProps) {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-xl font-bold text-green-600">{props.availableCommissionCount}</div>
-                                    <p className="text-xs text-muted-foreground">GHS {Number(props.totalAvailableCommissions || 0).toFixed(2)}</p>
+                                    <p className="text-xs text-muted-foreground">GHS {Number(props.availableOrderCommissions || 0).toFixed(2)}</p>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -214,7 +214,7 @@ export default function AdminCommissions(props: AdminCommissionsProps) {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-xl font-bold text-yellow-600">{props.pendingCommissionCount}</div>
-                                    <p className="text-xs text-muted-foreground">GHS {Number(props.totalPendingCommissions || 0).toFixed(2)}</p>
+                                    <p className="text-xs text-muted-foreground">GHS {Number(props.pendingOrderCommissions || 0).toFixed(2)}</p>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -223,7 +223,7 @@ export default function AdminCommissions(props: AdminCommissionsProps) {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-xl font-bold text-gray-600">{props.withdrawnCommissionCount}</div>
-                                    <p className="text-xs text-muted-foreground">GHS {Number(props.totalWithdrawnCommissions || 0).toFixed(2)}</p>
+                                    <p className="text-xs text-muted-foreground">GHS {Number(props.withdrawnOrderCommissions || 0).toFixed(2)}</p>
                                 </CardContent>
                             </Card>
                         </div>
@@ -251,14 +251,14 @@ export default function AdminCommissions(props: AdminCommissionsProps) {
                                                 <tr key={commission.id} className="border-b">
                                                     <td className="p-2">
                                                         <div>
-                                                            <div className="font-medium">{commission.agent.name}</div>
-                                                            <div className="text-sm text-gray-500">{commission.agent.email}</div>
+                                                            <div className="font-medium">{commission.agent?.name || 'N/A'}</div>
+                                                            <div className="text-sm text-gray-500">{commission.agent?.email || 'N/A'}</div>
                                                         </div>
                                                     </td>
                                                     <td className="p-2">
-                                                        <div className="font-mono text-sm">#{commission.order.id}</div>
+                                                        <div className="font-mono text-sm">#{commission.order?.id || 'N/A'}</div>
                                                         <div className="text-xs text-gray-500">
-                                                            Order: GHS {commission.order.total}
+                                                            Order: GHS {commission.order?.total || '0.00'}
                                                         </div>
                                                     </td>
                                                     <td className="p-2 font-semibold">GHS {commission.amount}</td>
@@ -417,12 +417,12 @@ export default function AdminCommissions(props: AdminCommissionsProps) {
                                                 <tr key={referralCommission.id} className="border-b">
                                                     <td className="p-2">
                                                         <div>
-                                                            <div className="font-medium">{referralCommission.referrer.name}</div>
-                                                            <div className="text-sm text-gray-500">{referralCommission.referrer.email}</div>
+                                                            <div className="font-medium">{referralCommission.referrer?.name || 'N/A'}</div>
+                                                            <div className="text-sm text-gray-500">{referralCommission.referrer?.email || 'N/A'}</div>
                                                         </div>
                                                     </td>
                                                     <td className="p-2">
-                                                        <Badge variant="outline">{referralCommission.type}</Badge>
+                                                        <Badge variant="outline">{referralCommission.type || 'N/A'}</Badge>
                                                     </td>
                                                     <td className="p-2 font-semibold">GHS {referralCommission.amount}</td>
                                                     <td className="p-2">{getStatusBadge(referralCommission.status)}</td>

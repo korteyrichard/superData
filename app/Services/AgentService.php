@@ -105,8 +105,17 @@ class AgentService
         $totalReferralEarnings = $agent->referralCommissions()->sum('amount');
         $totalEarnings = $totalCommissions + $totalReferralEarnings;
         
-        $availableCommissions = $agent->commissions()->where('status', 'available')->sum('amount');
-        $availableReferralEarnings = $agent->referralCommissions()->where('status', 'available')->sum('amount');
+        // Calculate available = sum(amount - withdrawn_amount) for available commissions
+        $availableCommissions = $agent->commissions()
+            ->where('status', 'available')
+            ->selectRaw('SUM(amount - withdrawn_amount) as total')
+            ->value('total') ?? 0;
+        
+        $availableReferralEarnings = $agent->referralCommissions()
+            ->where('status', 'available')
+            ->selectRaw('SUM(amount - withdrawn_amount) as total')
+            ->value('total') ?? 0;
+        
         $totalAvailable = $availableCommissions + $availableReferralEarnings;
         
         $paidWithdrawals = $agent->withdrawals()->where('status', 'paid')->sum('amount');

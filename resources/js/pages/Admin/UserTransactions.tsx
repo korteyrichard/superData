@@ -138,8 +138,10 @@ const UserTransactionsPage = ({ auth, user, transactions }: UserTransactionsPage
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance Before</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance After</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
@@ -155,11 +157,17 @@ const UserTransactionsPage = ({ auth, user, transactions }: UserTransactionsPage
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getTypeBadge(transaction.type)}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                        {transaction.description}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         ₵{parseFloat(transaction.amount).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {transaction.balance_before ? `₵${parseFloat(transaction.balance_before).toFixed(2)}` : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {transaction.balance_after ? `₵${parseFloat(transaction.balance_after).toFixed(2)}` : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                        {transaction.description}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(transaction.status)}
@@ -188,7 +196,13 @@ const UserTransactionsPage = ({ auth, user, transactions }: UserTransactionsPage
                       ₵{parseFloat(transaction.amount).toFixed(2)}
                     </p>
                   </div>
-                  <p className="text-sm text-gray-900">{transaction.description}</p>
+                  <p className="text-sm text-gray-900 mb-2">{transaction.description}</p>
+                  {(transaction.balance_before || transaction.balance_after) && (
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span>Before: {transaction.balance_before ? `₵${parseFloat(transaction.balance_before).toFixed(2)}` : 'N/A'}</span>
+                      <span>After: {transaction.balance_after ? `₵${parseFloat(transaction.balance_after).toFixed(2)}` : 'N/A'}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

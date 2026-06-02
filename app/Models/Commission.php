@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Commission extends Model
 {
-    protected $fillable = ['agent_id', 'order_id', 'amount', 'status', 'available_at'];
+    protected $fillable = ['agent_id', 'order_id', 'amount', 'withdrawn_amount', 'status', 'available_at'];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'withdrawn_amount' => 'decimal:2',
         'available_at' => 'datetime',
     ];
 

@@ -129,14 +129,11 @@ class DashboardController extends Controller
         ]);
 
         if ($response->successful()) {
-            return response()->json([
-                'success' => true,
-                'payment_url' => $response->json('data.authorization_url')
-            ]);
+            return Inertia::location($response->json('data.authorization_url'));
         }
 
         $transaction->update(['status' => 'failed']);
-        return response()->json(['success' => false, 'message' => 'Payment initialization failed']);
+        return redirect()->back()->with('error', 'Payment initialization failed');
     }
 
     public function handleWalletCallback(Request $request)

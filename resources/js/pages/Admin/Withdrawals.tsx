@@ -13,9 +13,11 @@ interface AdminWithdrawalsProps extends PageProps {
         last_page: number;
         total: number;
     };
+    totalAmount: number;
+    pendingCount: number;
 }
 
-export default function AdminWithdrawals({ auth, withdrawals }: AdminWithdrawalsProps) {
+export default function AdminWithdrawals({ auth, withdrawals, totalAmount, pendingCount }: AdminWithdrawalsProps) {
     const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
     const [action, setAction] = useState<'approve' | 'reject' | 'paid' | null>(null);
 
@@ -79,7 +81,7 @@ export default function AdminWithdrawals({ auth, withdrawals }: AdminWithdrawals
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {withdrawals.data.filter(w => w.status === 'pending').length}
+                                {pendingCount}
                             </div>
                         </CardContent>
                     </Card>
@@ -90,7 +92,7 @@ export default function AdminWithdrawals({ auth, withdrawals }: AdminWithdrawals
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                GHS {withdrawals.data.reduce((sum, w) => sum + Number(w.amount), 0).toFixed(2)}
+                                GHS {Number(totalAmount || 0).toFixed(2)}
                             </div>
                         </CardContent>
                     </Card>

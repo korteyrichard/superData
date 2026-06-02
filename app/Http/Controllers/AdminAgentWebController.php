@@ -13,6 +13,19 @@ class AdminAgentWebController extends Controller
 {
     public function agents(Request $request)
     {
+        // Calculate totals for ALL dealers (not paginated) for the summary cards
+        // Available = amount - withdrawn_amount for all commissions with status='available'
+        $totalAvailableCommissions = Commission::where('status', 'available')
+                ->selectRaw('COALESCE(SUM(amount - withdrawn_amount), 0) as available')
+                ->first()
+                ->available ?? 0;
+        $totalAvailableCommissions += ReferralCommission::where('status', 'available')
+                ->selectRaw('COALESCE(SUM(amount - withdrawn_amount), 0) as available')
+                ->first()
+                ->available ?? 0;
+        
+        $totalWithdrawnCommissions = Withdrawal::whereIn('status', ['approved', 'paid'])->sum('amount');
+
         $dealers = User::where('role', 'dealer')
             ->with(['agentShop'])
             ->withSum('commissions', 'amount')
@@ -24,14 +37,18 @@ class AdminAgentWebController extends Controller
         $dealers->getCollection()->transform(function ($dealer) {
             $dealer->total_commissions = ($dealer->commissions_sum_amount ?? 0) + ($dealer->referral_commissions_sum_amount ?? 0);
             
-            // Get available commissions (regular + referral)
+            // Get available commissions (regular + referral) - subtract withdrawn_amount from each
             $availableCommissions = $dealer->commissions()
                 ->where('status', 'available')
-                ->sum('amount');
+                ->selectRaw('COALESCE(SUM(amount - withdrawn_amount), 0) as available')
+                ->first()
+                ->available ?? 0;
             
             $availableReferralCommissions = $dealer->referralCommissions()
                 ->where('status', 'available')
-                ->sum('amount');
+                ->selectRaw('COALESCE(SUM(amount - withdrawn_amount), 0) as available')
+                ->first()
+                ->available ?? 0;
             
             $dealer->available_commissions = $availableCommissions + $availableReferralCommissions;
             
@@ -44,7 +61,9 @@ class AdminAgentWebController extends Controller
         });
 
         return Inertia::render('Admin/Agents', [
-            'agents' => $dealers
+            'agents' => $dealers,
+            'totalAvailableCommissions' => $totalAvailableCommissions,
+            'totalWithdrawnCommissions' => $totalWithdrawnCommissions
         ]);
     }
 

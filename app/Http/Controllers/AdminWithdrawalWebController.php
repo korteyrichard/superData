@@ -26,11 +26,17 @@ class AdminWithdrawalWebController extends Controller
             $query->where('status', $status);
         }
 
+        // Calculate totals for ALL withdrawals (not paginated)
+        $totalAmount = (clone $query)->sum('amount');
+        $pendingCount = (clone $query)->where('status', 'pending')->count();
+
         $withdrawals = $query->paginate(50);
 
         return Inertia::render('Admin/Withdrawals', [
             'withdrawals' => $withdrawals,
-            'filters' => ['status' => $status]
+            'filters' => ['status' => $status],
+            'totalAmount' => $totalAmount,
+            'pendingCount' => $pendingCount
         ]);
     }
 

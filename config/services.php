@@ -45,4 +45,9 @@ return [
         'secret_key' => env('PAYSTACK_SECRET_KEY'),
     ],
 
+    'dataeasy' => [
+        'base_url' => env('DATAEASY_BASE_URL', 'https://dataeasy.onrender.com/api/v1'),
+        'api_key' => env('DATAEASY_API_KEY'),
+    ],
+
 ];

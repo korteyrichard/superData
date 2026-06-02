@@ -18,12 +18,18 @@ class WithdrawalController extends Controller
 
         // Calculate commission earnings
         $totalCommissions = $user->commissions()->sum('amount');
-        $availableCommissions = $user->commissions()->where('status', 'available')->sum('amount');
+        $availableCommissions = $user->commissions()
+            ->where('status', 'available')
+            ->selectRaw('SUM(amount - withdrawn_amount) as total')
+            ->value('total') ?? 0;
         $pendingCommissions = $user->commissions()->where('status', 'pending')->sum('amount');
         
         // Calculate referral earnings
         $totalReferralEarnings = $user->referralCommissions()->sum('amount');
-        $availableReferralEarnings = $user->referralCommissions()->where('status', 'available')->sum('amount');
+        $availableReferralEarnings = $user->referralCommissions()
+            ->where('status', 'available')
+            ->selectRaw('SUM(amount - withdrawn_amount) as total')
+            ->value('total') ?? 0;
         $pendingReferralEarnings = $user->referralCommissions()->where('status', 'pending')->sum('amount');
         
         // Calculate pending withdrawals to subtract from available balance (exclude rejected and paid)
@@ -58,8 +64,14 @@ class WithdrawalController extends Controller
             'request_data' => $request->all()
         ]);
 
-        $availableBalance = $request->user()->commissions()->where('status', 'available')->sum('amount') +
-                           $request->user()->referralCommissions()->where('status', 'available')->sum('amount');
+        $availableBalance = ($request->user()->commissions()
+                                ->where('status', 'available')
+                                ->selectRaw('SUM(amount - withdrawn_amount) as total')
+                                ->value('total') ?? 0) +
+                           ($request->user()->referralCommissions()
+                                ->where('status', 'available')
+                                ->selectRaw('SUM(amount - withdrawn_amount) as total')
+                                ->value('total') ?? 0);
         
         // Subtract pending withdrawals (exclude rejected and paid)
         $pendingWithdrawals = $request->user()->withdrawals()->whereNotIn('status', ['rejected', 'paid'])->sum('requested_amount');

@@ -7,6 +7,8 @@ interface Transaction {
   id: number;
   type: string;
   amount: number;
+  balance_before?: string;
+  balance_after?: string;
   description: string;
   created_at: string;
 }
@@ -96,14 +98,16 @@ export default function Transactions({ auth }: TransactionsPageProps) {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
                     <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance Before</th>
+                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance After</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
                   {filteredTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-8 text-gray-400 dark:text-gray-500 text-lg">
+                      <td colSpan={6} className="text-center py-8 text-gray-400 dark:text-gray-500 text-lg">
                         No transactions found.
                       </td>
                     </tr>
@@ -118,11 +122,17 @@ export default function Transactions({ auth }: TransactionsPageProps) {
                             {typeLabels[t.type] || t.type}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-300">
-                          {t.description}
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-bold text-gray-900 dark:text-gray-100">
                           GHC {t.amount.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-gray-700 dark:text-gray-300">
+                          {t.balance_before ? `GHC ${parseFloat(t.balance_before).toLocaleString()}` : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-xs text-gray-700 dark:text-gray-300">
+                          {t.balance_after ? `GHC ${parseFloat(t.balance_after).toLocaleString()}` : 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-300">
+                          {t.description}
                         </td>
                       </tr>
                     ))
@@ -150,6 +160,12 @@ export default function Transactions({ auth }: TransactionsPageProps) {
                     <div className="text-right text-lg font-bold text-gray-900 dark:text-white mt-2">
                       GHC {t.amount.toLocaleString()}
                     </div>
+                    {(t.balance_before || t.balance_after) && (
+                      <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <span>Before: {t.balance_before ? `GHC ${parseFloat(t.balance_before).toLocaleString()}` : 'N/A'}</span>
+                        <span>After: {t.balance_after ? `GHC ${parseFloat(t.balance_after).toLocaleString()}` : 'N/A'}</span>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

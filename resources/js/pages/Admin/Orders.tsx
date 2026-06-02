@@ -23,13 +23,15 @@ interface Order {
   network?: string;
   beneficiary_number?: string;
   customer_email?: string;
+  customer_name?: string;
   paystack_reference?: string;
   products: Product[];
-  user: {
+  user?: {
     id: number;
     name: string;
     email: string;
   };
+  agent_id?: number;
   commission?: {
     id: number;
     amount: number;
@@ -372,8 +374,12 @@ export default function AdminOrders() {
                       <td className="px-3 sm:px-5 py-3 sm:py-4 font-semibold">{order.id}</td>
                       <td className="px-3 sm:px-5 py-3 sm:py-4">
                         <div className="text-sm">
-                          <div className="font-medium">{order.user.name}</div>
-                          <div className="text-gray-500 text-xs">{order.user.email}</div>
+                          <div className="font-medium">
+                            {order.agent_id ? (order.customer_name || 'N/A') : (order.user?.name || 'N/A')}
+                          </div>
+                          <div className="text-gray-500 text-xs">
+                            {order.agent_id ? (order.customer_email || 'N/A') : (order.user?.email || 'N/A')}
+                          </div>
                         </div>
                       </td>
                       <td className="px-3 sm:px-5 py-3 sm:py-4">

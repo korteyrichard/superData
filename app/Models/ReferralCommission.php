@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReferralCommission extends Model
 {
-    protected $fillable = ['referrer_id', 'commission_id', 'amount', 'status', 'available_at', 'type'];
+    protected $fillable = ['referrer_id', 'commission_id', 'amount', 'withdrawn_amount', 'status', 'available_at', 'type'];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'withdrawn_amount' => 'decimal:2',
         'available_at' => 'datetime',
     ];
 

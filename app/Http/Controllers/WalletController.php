@@ -37,17 +37,11 @@ class WalletController extends Controller
             ->first();
 
         if (!$transaction) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction not found'
-            ]);
+            return redirect()->back()->with('error', 'Transaction not found');
         }
 
         if ($transaction->status === 'completed') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction already verified'
-            ]);
+            return redirect()->back()->with('error', 'Transaction already verified');
         }
 
         try {
@@ -65,21 +59,12 @@ class WalletController extends Controller
                     $user->increment('wallet_balance', $transaction->amount);
                 });
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Payment verified and balance updated'
-                ]);
+                return redirect()->back()->with('success', 'Payment verified and balance updated');
             } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment verification failed'
-                ]);
+                return redirect()->back()->with('error', 'Payment verification failed');
             }
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error verifying payment: ' . $e->getMessage()
-            ]);
+            return redirect()->back()->with('error', 'Error verifying payment: ' . $e->getMessage());
         }
     }
 }

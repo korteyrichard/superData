@@ -1,5 +1,5 @@
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -66,7 +66,7 @@ export default function AgentCommissions({ auth, commissions, totals }: AgentCom
             <div className="py-8">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <Card className="bg-gradient-to-br from-blue-500 to-purple-600 text-white border-0 shadow-xl">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-xs font-medium text-blue-100">Total Commissions</CardTitle>
@@ -74,6 +74,16 @@ export default function AgentCommissions({ auth, commissions, totals }: AgentCom
                             <CardContent>
                                 <div className="text-2xl font-bold">GHS {totalEarnings.toFixed(2)}</div>
                                 <p className="text-blue-100 text-xs mt-1">From product sales</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white border-0 shadow-xl">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-medium text-green-100">Available for Withdrawal</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">GHS {availableEarnings.toFixed(2)}</div>
+                                <p className="text-green-100 text-xs mt-1">Ready to withdraw</p>
                             </CardContent>
                         </Card>
 
@@ -147,6 +157,34 @@ export default function AgentCommissions({ auth, commissions, totals }: AgentCom
                                 <div className="text-center py-12">
                                     <p className="text-gray-500 text-lg">No commissions found</p>
                                     <p className="text-gray-400 text-sm mt-2">Start selling to earn commissions!</p>
+                                </div>
+                            )}
+
+                            {/* Pagination Controls */}
+                            {commissions.last_page > 1 && (
+                                <div className="flex items-center justify-between p-4 border-t bg-gray-50">
+                                    <div className="text-sm text-gray-600">
+                                        Page <span className="font-semibold">{commissions.current_page}</span> of <span className="font-semibold">{commissions.last_page}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {commissions.current_page > 1 && (
+                                            <Link
+                                                href={route('dealer.commissions', { page: commissions.current_page - 1 })}
+                                                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                                            >
+                                                Previous
+                                            </Link>
+                                        )}
+                                        
+                                        {commissions.current_page < commissions.last_page && (
+                                            <Link
+                                                href={route('dealer.commissions', { page: commissions.current_page + 1 })}
+                                                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                                            >
+                                                Next
+                                            </Link>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </CardContent>

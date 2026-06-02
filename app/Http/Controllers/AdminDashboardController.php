@@ -45,6 +45,10 @@ class AdminDashboardController extends Controller
             'totalRevenue' => $totalRevenue,
             'apiEnabled' => Setting::get('api_enabled', 'true') === 'true',
             'codeCraftApiEnabled' => Setting::get('codecraft_api_enabled', 'true') === 'true',
+            'codeCraftMtnApiEnabled' => Setting::get('codecraft_mtn_api_enabled', 'false') === 'true',
+            'prodataWorldApiEnabled' => Setting::get('prodataworld_api_enabled', 'false') === 'true',
+            'dataEasyApiEnabled' => Setting::get('dataeasy_api_enabled', 'false') === 'true',
+            'dataFlowApiEnabled' => Setting::get('dataflow_api_enabled', 'false') === 'true',
         ]);
     }
 
@@ -112,7 +116,7 @@ class AdminDashboardController extends Controller
     {
         $orders = Order::with(['products' => function($query) {
             $query->withPivot('quantity', 'price', 'beneficiary_number');
-        }, 'user', 'commission'])->select('id', 'user_id', 'agent_id', 'total', 'status', 'api_status', 'created_at', 'network', 'beneficiary_number', 'customer_email', 'paystack_reference')->latest();
+        }, 'user', 'commission'])->select('orders.*')->latest();
 
         if ($request->has('network') && $request->input('network') !== '') {
             $orders->where('network', 'like', '%' . $request->input('network') . '%');
@@ -171,35 +175,67 @@ class AdminDashboardController extends Controller
             $commissions->where('agent_id', $request->input('agent_id'));
         }
 
-        // Calculate commission totals (excluding referral commissions)
-        $totalCommissions = \App\Models\Commission::sum('amount');
-        $totalAvailableCommissions = \App\Models\Commission::where('status', 'available')->sum('amount');
-        $totalPendingCommissions = \App\Models\Commission::where('status', 'pending')->sum('amount');
-        $totalPaidCommissions = \App\Models\Commission::where('status', 'paid')->sum('amount');
-        $totalWithdrawnCommissions = \App\Models\Commission::where('status', 'withdrawn')->sum('amount');
+        // Calculate ORDER commission totals
+        $totalOrderCommissions = \App\Models\Commission::sum('amount');
+        $availableOrderCommissions = \App\Models\Commission::where('status', 'available')->sum('amount');
+        $pendingOrderCommissions = \App\Models\Commission::where('status', 'pending')->sum('amount');
+        $paidOrderCommissions = \App\Models\Commission::where('status', 'paid')->sum('amount');
+        $withdrawnOrderCommissions = \App\Models\Commission::where('status', 'withdrawn')->sum('amount');
         
-        // Get commission counts
+        // Get ORDER commission counts
         $totalCommissionCount = \App\Models\Commission::count();
         $availableCommissionCount = \App\Models\Commission::where('status', 'available')->count();
         $pendingCommissionCount = \App\Models\Commission::where('status', 'pending')->count();
         $paidCommissionCount = \App\Models\Commission::where('status', 'paid')->count();
         $withdrawnCommissionCount = \App\Models\Commission::where('status', 'withdrawn')->count();
 
+        // Fetch referral commissions with pagination
+        $referralCommissions = \App\Models\ReferralCommission::with(['referrer'])->latest()->paginate(50);
+
+        // Calculate REFERRAL commission totals
+        $totalReferralCommissions = \App\Models\ReferralCommission::sum('amount');
+        $availableReferralCommissions = \App\Models\ReferralCommission::where('status', 'available')->sum('amount');
+        $pendingReferralCommissions = \App\Models\ReferralCommission::where('status', 'pending')->sum('amount');
+        $withdrawnReferralCommissions = \App\Models\ReferralCommission::where('status', 'withdrawn')->sum('amount');
+
+        // Get REFERRAL commission counts
+        $totalReferralCount = \App\Models\ReferralCommission::count();
+        $availableReferralCount = \App\Models\ReferralCommission::where('status', 'available')->count();
+        $pendingReferralCount = \App\Models\ReferralCommission::where('status', 'pending')->count();
+        $withdrawnReferralCount = \App\Models\ReferralCommission::where('status', 'withdrawn')->count();
+
         return Inertia::render('Admin/Commissions', [
             'commissions' => $commissions->paginate(50),
+            'referralCommissions' => $referralCommissions,
             'filterStatus' => $request->input('status', ''),
             'filterAgentId' => $request->input('agent_id', ''),
             'agents' => User::whereIn('role', ['agent', 'dealer'])->get(['id', 'name', 'email']),
-            'totalCommissions' => $totalCommissions,
-            'totalAvailableCommissions' => $totalAvailableCommissions,
-            'totalPendingCommissions' => $totalPendingCommissions,
-            'totalPaidCommissions' => $totalPaidCommissions,
-            'totalWithdrawnCommissions' => $totalWithdrawnCommissions,
+            
+            // Order Commission Data
+            'totalOrderCommissions' => $totalOrderCommissions,
+            'availableOrderCommissions' => $availableOrderCommissions,
+            'pendingOrderCommissions' => $pendingOrderCommissions,
+            'paidOrderCommissions' => $paidOrderCommissions,
+            'withdrawnOrderCommissions' => $withdrawnOrderCommissions,
             'totalCommissionCount' => $totalCommissionCount,
             'availableCommissionCount' => $availableCommissionCount,
             'pendingCommissionCount' => $pendingCommissionCount,
             'paidCommissionCount' => $paidCommissionCount,
-            'withdrawnCommissionCount' => $withdrawnCommissionCount
+            'withdrawnCommissionCount' => $withdrawnCommissionCount,
+            
+            // Referral Commission Data
+            'totalReferralCommissions' => $totalReferralCommissions,
+            'availableReferralCommissions' => $availableReferralCommissions,
+            'pendingReferralCommissions' => $pendingReferralCommissions,
+            'withdrawnReferralCommissions' => $withdrawnReferralCommissions,
+            'totalReferralCount' => $totalReferralCount,
+            'availableReferralCount' => $availableReferralCount,
+            'pendingReferralCount' => $pendingReferralCount,
+            'withdrawnReferralCount' => $withdrawnReferralCount,
+            
+            // Combined totals for overview
+            'totalAllCommissions' => $totalOrderCommissions + $totalReferralCommissions,
+            'totalAvailableCommissions' => $availableOrderCommissions + $availableReferralCommissions
         ]);
     }
 
@@ -253,6 +289,7 @@ class AdminDashboardController extends Controller
         if ($request->status === 'cancelled' && $oldStatus !== 'cancelled') {
             $user = $order->user;
             $refundAmount = $order->total;
+            $balanceBefore = $user->wallet_balance;
             
             // Add refund to user's wallet
             $user->increment('wallet_balance', $refundAmount);
@@ -262,6 +299,8 @@ class AdminDashboardController extends Controller
                 'user_id' => $user->id,
                 'order_id' => $order->id,
                 'amount' => $refundAmount,
+                'balance_before' => $balanceBefore,
+                'balance_after' => $user->fresh()->wallet_balance,
                 'status' => 'completed',
                 'type' => 'refund',
                 'description' => "Refund for cancelled order #{$order->id}",
@@ -309,6 +348,7 @@ class AdminDashboardController extends Controller
                 if ($order->status !== 'cancelled') {
                     $user = $order->user;
                     $refundAmount = $order->total;
+                    $balanceBefore = $user->wallet_balance;
                     
                     // Add refund to user's wallet
                     $user->increment('wallet_balance', $refundAmount);
@@ -318,6 +358,8 @@ class AdminDashboardController extends Controller
                         'user_id' => $user->id,
                         'order_id' => $order->id,
                         'amount' => $refundAmount,
+                        'balance_before' => $balanceBefore,
+                        'balance_after' => $user->fresh()->wallet_balance,
                         'status' => 'completed',
                         'type' => 'refund',
                         'description' => "Refund for cancelled order #{$order->id}",
@@ -420,6 +462,7 @@ class AdminDashboardController extends Controller
             'amount' => 'required|numeric|min:0.01',
         ]);
 
+        $balanceBefore = $user->wallet_balance;
         $user->increment('wallet_balance', $request->amount);
 
         // Create transaction record
@@ -427,6 +470,8 @@ class AdminDashboardController extends Controller
             'user_id' => $user->id,
             'order_id' => null,
             'amount' => $request->amount,
+            'balance_before' => $balanceBefore,
+            'balance_after' => $user->fresh()->wallet_balance,
             'status' => 'completed',
             'type' => 'credit',
             'description' => 'Admin wallet credit of GHS ' . number_format($request->amount, 2),
@@ -448,6 +493,7 @@ class AdminDashboardController extends Controller
             return redirect()->route('admin.users')->with('error', 'Insufficient wallet balance.');
         }
 
+        $balanceBefore = $user->wallet_balance;
         $user->decrement('wallet_balance', $request->amount);
 
         // Create transaction record
@@ -455,6 +501,8 @@ class AdminDashboardController extends Controller
             'user_id' => $user->id,
             'order_id' => null,
             'amount' => $request->amount,
+            'balance_before' => $balanceBefore,
+            'balance_after' => $user->fresh()->wallet_balance,
             'status' => 'completed',
             'type' => 'debit',
             'description' => 'Admin wallet debit of GHS ' . number_format($request->amount, 2),
@@ -613,6 +661,62 @@ class AdminDashboardController extends Controller
         Setting::set('codecraft_api_enabled', $request->enabled ? 'true' : 'false');
 
         return redirect()->back()->with('success', 'CodeCraft API status updated successfully.');
+    }
+
+    /**
+     * Toggle ProdataWorld API status.
+     */
+    public function toggleProdataWorldApi(Request $request)
+    {
+        $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        Setting::set('prodataworld_api_enabled', $request->enabled ? 'true' : 'false');
+
+        return redirect()->back()->with('success', 'ProdataWorld API status updated successfully.');
+    }
+
+    /**
+     * Toggle CodeCraft MTN API status.
+     */
+    public function toggleCodeCraftMtnApi(Request $request)
+    {
+        $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        Setting::set('codecraft_mtn_api_enabled', $request->enabled ? 'true' : 'false');
+
+        return redirect()->back()->with('success', 'CodeCraft MTN API status updated successfully.');
+    }
+
+    /**
+     * Toggle DataEasy API status.
+     */
+    public function toggleDataEasyApi(Request $request)
+    {
+        $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        Setting::set('dataeasy_api_enabled', $request->enabled ? 'true' : 'false');
+
+        return redirect()->back()->with('success', 'DataEasy API status updated successfully.');
+    }
+
+    /**
+     * Toggle DataFlow API status.
+     */
+    public function toggleDataFlowApi(Request $request)
+    {
+        $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        Setting::set('dataflow_api_enabled', $request->enabled ? 'true' : 'false');
+
+        return redirect()->back()->with('success', 'DataFlow API status updated successfully.');
     }
 
     /**

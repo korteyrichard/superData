@@ -1,5 +1,5 @@
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import React, { useState } from 'react';
 import TelecelCard from '../../components/TelecelCard';
@@ -100,33 +100,19 @@ export default function Dashboard({ auth }: DashboardProps) {
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Add to Wallet</h3>
             <form
               className="flex flex-col gap-3"
-              onSubmit={async (e) => {
+              onSubmit={(e) => {
                 e.preventDefault();
                 setIsAdding(true);
                 setAddError(null);
-                try {
-                  const response = await fetch('/dashboard/wallet/add', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Accept': 'application/json',
-                      'X-Requested-With': 'XMLHttpRequest',
-                      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                router.post('/dashboard/wallet/add', 
+                  { amount: addAmount },
+                  {
+                    onError: (errors) => {
+                      setAddError(Object.values(errors)[0] || 'Failed to initialize payment.');
                     },
-                    body: JSON.stringify({ amount: addAmount }),
-                  });
-                  const data = await response.json();
-                  if (data.success && data.payment_url) {
-                    // Redirect to Paystack payment page
-                    window.location.href = data.payment_url;
-                  } else {
-                    setAddError(data.message || 'Failed to initialize payment.');
+                    onFinish: () => setIsAdding(false),
                   }
-                } catch (err) {
-                  setAddError('Error initializing payment.');
-                } finally {
-                  setIsAdding(false);
-                }
+                );
               }}
             >
               <input

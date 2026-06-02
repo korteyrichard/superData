@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Services\OrderPusherService;
 use App\Services\CodeCraftOrderPusherService;
+use App\Services\CodeCraftMtnOrderPusherService;
+use App\Services\ProdataWorldOrderPusherService;
+use App\Services\DataEasyOrderPusherService;
+use App\Services\DataFlowOrderPusherService;
+use App\Models\Setting;
 
 class OrdersController extends Controller
 {
@@ -175,10 +180,12 @@ class OrdersController extends Controller
             Log::info('Cart cleared.', ['userId' => $user->id]);
 
             // Create a transaction record for the order
-            \App\Models\Transaction::create([
+            $transaction = \App\Models\Transaction::create([
                 'user_id' => $user->id,
                 'order_id' => $order->id,
                 'amount' => $total,
+                'balance_before' => (float) bcsub((string) $user->wallet_balance, (string) (-$total), 2), // Balance before deduction
+                'balance_after' => $user->wallet_balance,
                 'status' => 'completed',
                 'type' => 'order',
                 'description' => 'Order placed for data/airtime.',
@@ -191,14 +198,45 @@ class OrdersController extends Controller
             // Push order to external API
             try {
                 if ($this->isMtnOrder($order)) {
-                    $orderPusher = new OrderPusherService();
-                    $orderPusher->pushOrderToApi($order);
+                    // Check if CodeCraft MTN API is enabled first
+                    if (Setting::get('codecraft_mtn_api_enabled', 'false') === 'true') {
+                        Log::info('Using CodeCraft MTN API for order', ['order_id' => $order->id]);
+                        $orderPusher = new CodeCraftMtnOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } elseif (Setting::get('dataflow_api_enabled', 'false') === 'true') {
+                        Log::info('Using DataFlow API for MTN order', ['order_id' => $order->id]);
+                        $orderPusher = new DataFlowOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } elseif (Setting::get('dataeasy_api_enabled', 'false') === 'true') {
+                        Log::info('Using DataEasy API for MTN order', ['order_id' => $order->id]);
+                        $orderPusher = new DataEasyOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } elseif (Setting::get('prodataworld_api_enabled', 'false') === 'true') {
+                        Log::info('Using ProdataWorld API for MTN order', ['order_id' => $order->id]);
+                        $orderPusher = new ProdataWorldOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } else {
+                        Log::info('Using default Order Pusher API for MTN order', ['order_id' => $order->id]);
+                        $orderPusher = new OrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    }
                 } else {
+                    Log::info('Using CodeCraft API for non-MTN order', ['order_id' => $order->id]);
                     $orderPusher = new CodeCraftOrderPusherService();
                     $orderPusher->pushOrderToApi($order);
                 }
             } catch (\Exception $e) {
-                Log::error('Failed to push order to external API', ['error' => $e->getMessage()]);
+                Log::error('Failed to push order to external API', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                // Update order status to indicate API failure
+                $order->update(['api_status' => 'failed']);
+                
+                // Don't fail the entire checkout process, just log the error
+                // The order was successfully created and payment processed
             }
 
             // Redirect to orders page with success message

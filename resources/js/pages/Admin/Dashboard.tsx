@@ -36,6 +36,10 @@ interface AdminDashboardProps extends PageProps {
   totalRevenue: number;
   apiEnabled: boolean;
   codeCraftApiEnabled: boolean;
+  codeCraftMtnApiEnabled: boolean;
+  prodataWorldApiEnabled: boolean;
+  dataEasyApiEnabled: boolean;
+  dataFlowApiEnabled: boolean;
 }
 
 const StatCard = ({ title, value }: { title: string; value: number | string }) => (
@@ -57,12 +61,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   totalRevenue,
   apiEnabled,
   codeCraftApiEnabled,
+  codeCraftMtnApiEnabled,
+  prodataWorldApiEnabled,
+  dataEasyApiEnabled,
+  dataFlowApiEnabled,
 }) => {
   const { auth } = usePage<AdminDashboardProps>().props;
   const [isApiEnabled, setIsApiEnabled] = useState(apiEnabled);
   const [isCodeCraftApiEnabled, setIsCodeCraftApiEnabled] = useState(codeCraftApiEnabled);
+  const [isCodeCraftMtnApiEnabled, setIsCodeCraftMtnApiEnabled] = useState(codeCraftMtnApiEnabled);
+  const [isProdataWorldApiEnabled, setIsProdataWorldApiEnabled] = useState(prodataWorldApiEnabled);
+  const [isDataEasyApiEnabled, setIsDataEasyApiEnabled] = useState(dataEasyApiEnabled);
+  const [isDataFlowApiEnabled, setIsDataFlowApiEnabled] = useState(dataFlowApiEnabled);
   const [isToggling, setIsToggling] = useState(false);
   const [isCodeCraftToggling, setIsCodeCraftToggling] = useState(false);
+  const [isCodeCraftMtnToggling, setIsCodeCraftMtnToggling] = useState(false);
+  const [isProdataWorldToggling, setIsProdataWorldToggling] = useState(false);
+  const [isDataEasyToggling, setIsDataEasyToggling] = useState(false);
+  const [isDataFlowToggling, setIsDataFlowToggling] = useState(false);
 
   const handleApiToggle = () => {
     setIsToggling(true);
@@ -90,6 +106,65 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       },
       onError: () => {
         setIsCodeCraftToggling(false);
+      },
+    });
+  };
+
+  const handleCodeCraftMtnApiToggle = () => {
+    setIsCodeCraftMtnToggling(true);
+    router.post(route('admin.codecraft-mtn-api.toggle'), {
+      enabled: !isCodeCraftMtnApiEnabled,
+    }, {
+      onSuccess: () => {
+        setIsCodeCraftMtnApiEnabled(!isCodeCraftMtnApiEnabled);
+        setIsCodeCraftMtnToggling(false);
+      },
+      onError: () => {
+        setIsCodeCraftMtnToggling(false);
+      },
+    });
+  };
+
+  const handleProdataWorldApiToggle = () => {
+    setIsProdataWorldToggling(true);
+    router.post(route('admin.prodataworld-api.toggle'), {
+      enabled: !isProdataWorldApiEnabled,
+    }, {
+      onSuccess: () => {
+        setIsProdataWorldApiEnabled(!isProdataWorldApiEnabled);
+        setIsProdataWorldToggling(false);
+      },
+      onError: () => {
+        setIsProdataWorldToggling(false);
+      },
+    });
+  };
+  const handleDataEasyApiToggle = () => {
+    setIsDataEasyToggling(true);
+    router.post(route('admin.dataeasy-api.toggle'), {
+      enabled: !isDataEasyApiEnabled,
+    }, {
+      onSuccess: () => {
+        setIsDataEasyApiEnabled(!isDataEasyApiEnabled);
+        setIsDataEasyToggling(false);
+      },
+      onError: () => {
+        setIsDataEasyToggling(false);
+      },
+    });
+  };
+
+  const handleDataFlowApiToggle = () => {
+    setIsDataFlowToggling(true);
+    router.post(route('admin.dataflow-api.toggle'), {
+      enabled: !isDataFlowApiEnabled,
+    }, {
+      onSuccess: () => {
+        setIsDataFlowApiEnabled(!isDataFlowApiEnabled);
+        setIsDataFlowToggling(false);
+      },
+      onError: () => {
+        setIsDataFlowToggling(false);
       },
     });
   };
@@ -200,6 +275,108 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                 }`}>
                   {isCodeCraftApiEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
+
+            {/* CodeCraft MTN API Toggle */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">CodeCraft MTN Order Pusher API (MTN)</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
+                    {isCodeCraftMtnApiEnabled ? 'MTN orders are being sent to CodeCraft MTN API' : 'MTN orders are not being sent to CodeCraft MTN API'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleCodeCraftMtnApiToggle}
+                  disabled={isCodeCraftMtnToggling}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isCodeCraftMtnApiEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                  } ${isCodeCraftMtnToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isCodeCraftMtnApiEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="mt-4">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  isCodeCraftMtnApiEnabled 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  {isCodeCraftMtnApiEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
+
+            {/* ProdataWorld API Toggle */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">ProdataWorld Order Pusher API (MTN)</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
+                    {isProdataWorldApiEnabled ? 'MTN orders are being sent to ProdataWorld API' : 'MTN orders are not being sent to ProdataWorld API'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleProdataWorldApiToggle}
+                  disabled={isProdataWorldToggling}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isProdataWorldApiEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                  } ${isProdataWorldToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isProdataWorldApiEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="mt-4">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  isProdataWorldApiEnabled 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  {isProdataWorldApiEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
+
+            {/* DataFlow API Toggle */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">DataFlow Order Pusher API (MTN)</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
+                    {isDataFlowApiEnabled ? 'MTN orders are being sent to DataFlow API' : 'MTN orders are not being sent to DataFlow API'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleDataFlowApiToggle}
+                  disabled={isDataFlowToggling}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isDataFlowApiEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                  } ${isDataFlowToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isDataFlowApiEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="mt-4">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  isDataFlowApiEnabled 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  {isDataFlowApiEnabled ? 'Enabled' : 'Disabled'}
                 </span>
               </div>
             </div>

@@ -34,9 +34,10 @@ interface ReferralStats {
 interface AgentReferralsProps extends PageProps {
     referralStats: ReferralStats;
     referralLink: string;
+    referralCode: string;
 }
 
-export default function AgentReferrals({ auth, referralStats, referralLink }: AgentReferralsProps) {
+export default function AgentReferrals({ auth, referralStats, referralLink, referralCode }: AgentReferralsProps) {
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         // You could add a toast notification here
@@ -146,15 +147,14 @@ export default function AgentReferrals({ auth, referralStats, referralLink }: Ag
                                     <label className="block text-sm font-medium mb-2 text-gray-700">Referral Code</label>
                                     <div className="flex gap-2">
                                         <Input
-                                            value={auth.user.referral_code || 'Not generated'}
+                                            value={referralCode}
                                             readOnly
                                             className="flex-1 bg-gray-50 font-mono text-lg font-bold text-center"
                                         />
                                         <Button
                                             type="button"
-                                            onClick={() => copyToClipboard(auth.user.referral_code || '')}
-                                            disabled={!auth.user.referral_code}
-                                            className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-6 shadow-lg disabled:opacity-50"
+                                            onClick={() => copyToClipboard(referralCode)}
+                                            className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-6 shadow-lg"
                                         >
                                             Copy
                                         </Button>

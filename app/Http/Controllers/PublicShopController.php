@@ -10,6 +10,10 @@ use App\Models\Commission;
 use App\Models\Transaction;
 use App\Services\OrderPusherService;
 use App\Services\CodeCraftOrderPusherService;
+use App\Services\CodeCraftMtnOrderPusherService;
+use App\Services\ProdataWorldOrderPusherService;
+use App\Services\DataEasyOrderPusherService;
+use App\Models\Setting;
 use App\Services\PaystackService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -202,8 +206,20 @@ class PublicShopController extends Controller
                 // Push order to external API
                 try {
                     if ($this->isMtnOrder($order)) {
-                        $orderPusher = new OrderPusherService();
-                        $orderPusher->pushOrderToApi($order);
+                        // Check if CodeCraft MTN API is enabled first
+                        if (Setting::get('codecraft_mtn_api_enabled', 'false') === 'true') {
+                            $orderPusher = new CodeCraftMtnOrderPusherService();
+                            $orderPusher->pushOrderToApi($order);
+                        } elseif (Setting::get('dataeasy_api_enabled', 'false') === 'true') {
+                            $orderPusher = new DataEasyOrderPusherService();
+                            $orderPusher->pushOrderToApi($order);
+                        } elseif (Setting::get('prodataworld_api_enabled', 'false') === 'true') {
+                            $orderPusher = new ProdataWorldOrderPusherService();
+                            $orderPusher->pushOrderToApi($order);
+                        } else {
+                            $orderPusher = new OrderPusherService();
+                            $orderPusher->pushOrderToApi($order);
+                        }
                     } else {
                         $orderPusher = new CodeCraftOrderPusherService();
                         $orderPusher->pushOrderToApi($order);
@@ -454,8 +470,20 @@ class PublicShopController extends Controller
                 ]);
                 
                 if ($this->isMtnOrder($order)) {
-                    $orderPusher = new OrderPusherService();
-                    $orderPusher->pushOrderToApi($order);
+                    // Check if CodeCraft MTN API is enabled first
+                    if (Setting::get('codecraft_mtn_api_enabled', 'false') === 'true') {
+                        $orderPusher = new CodeCraftMtnOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } elseif (Setting::get('dataeasy_api_enabled', 'false') === 'true') {
+                        $orderPusher = new DataEasyOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } elseif (Setting::get('prodataworld_api_enabled', 'false') === 'true') {
+                        $orderPusher = new ProdataWorldOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } else {
+                        $orderPusher = new OrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    }
                 } else {
                     $orderPusher = new CodeCraftOrderPusherService();
                     $orderPusher->pushOrderToApi($order);

@@ -58,11 +58,18 @@ class AgentController extends Controller
     public function referrals(Request $request)
     {
         $user = $request->user();
+        
+        // Ensure referral code is generated if not present
+        if (!$user->referral_code) {
+            $user->generateReferralCode();
+        }
+        
         $referralStats = $this->referralService->getReferralStats($user);
         
         return Inertia::render('Dashboard/AgentReferrals', [
             'referralStats' => $referralStats,
-            'referralLink' => $this->referralService->generateReferralLink($user)
+            'referralLink' => $this->referralService->generateReferralLink($user),
+            'referralCode' => $user->referral_code
         ]);
     }
 }

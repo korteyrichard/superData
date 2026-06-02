@@ -20,9 +20,11 @@ interface AdminAgentsProps extends PageProps {
         last_page: number;
         total: number;
     };
+    totalAvailableCommissions: number;
+    totalWithdrawnCommissions: number;
 }
 
-export default function AdminAgents({ auth, agents }: AdminAgentsProps) {
+export default function AdminAgents({ auth, agents, totalAvailableCommissions, totalWithdrawnCommissions }: AdminAgentsProps) {
     const [selectedAgent, setSelectedAgent] = useState<User | null>(null);
     const [action, setAction] = useState<'activate' | 'deactivate' | null>(null);
     const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
@@ -115,7 +117,7 @@ export default function AdminAgents({ auth, agents }: AdminAgentsProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-green-600">
-                                ${agents.data.reduce((sum, agent) => sum + Number(agent.available_commissions || 0), 0).toFixed(2)}
+                                ${Number(totalAvailableCommissions || 0).toFixed(2)}
                             </div>
                         </CardContent>
                     </Card>
@@ -126,7 +128,7 @@ export default function AdminAgents({ auth, agents }: AdminAgentsProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-blue-600">
-                                ${agents.data.reduce((sum, agent) => sum + Number(agent.withdrawn_commissions || 0), 0).toFixed(2)}
+                                ${Number(totalWithdrawnCommissions || 0).toFixed(2)}
                             </div>
                         </CardContent>
                     </Card>
