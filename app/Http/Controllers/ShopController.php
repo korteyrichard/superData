@@ -20,7 +20,10 @@ class ShopController extends Controller
             return $this->errorResponse('Shop not found', 404);
         }
 
-        $products = $shop->agentProducts->where('is_active', true)->map(function ($agentProduct) {
+        $products = $shop->agentProducts->where('is_active', true)->filter(function ($agentProduct) {
+            return $agentProduct->product->status === 'IN STOCK'
+                && $agentProduct->agent_price >= $agentProduct->product->price;
+        })->map(function ($agentProduct) {
             return [
                 'id' => $agentProduct->product->id,
                 'name' => $agentProduct->product->name,

@@ -58,7 +58,7 @@ interface DashboardProps extends PageProps {
 }
 
 export default function Dashboard({ auth }: DashboardProps) {
-  const { products, cartCount, cartItems, walletBalance: initialWalletBalance, orders, alerts } = usePage<DashboardProps>().props;
+  const { products, cartCount, cartItems, walletBalance: initialWalletBalance, orders, alerts, flash } = usePage<DashboardProps & { flash: { verify_result?: any } }>().props;
 
   const [walletBalance, setWalletBalance] = useState(initialWalletBalance ?? 0);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -67,6 +67,10 @@ export default function Dashboard({ auth }: DashboardProps) {
   const [addError, setAddError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState('MTN');
+
+  const [verifyNumber, setVerifyNumber] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const verifyResult = flash?.verify_result ?? null;
 
   const networkTabs = ['MTN', 'TELECEL', 'AT Data (Instant)', 'AT (Big Packages)'];
   
@@ -261,6 +265,61 @@ export default function Dashboard({ auth }: DashboardProps) {
                 <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">{completedOrders}</p>
               </div>
             </div>
+          </div>
+
+          {/* Verify Number Section */}
+          <div className="mb-8 sm:mb-10 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Verify a Number</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Check if a number is eligible before placing an order. Free — nothing is charged.</p>
+            <form
+              className="flex flex-col sm:flex-row gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setIsVerifying(true);
+                router.post('/dashboard/verify-number',
+                  { recipient: verifyNumber },
+                  { onFinish: () => setIsVerifying(false), preserveScroll: true }
+                );
+              }}
+            >
+              <div className="rounded-lg px-3 py-2 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
+                MTN
+              </div>
+              <input
+                type="text"
+                className="flex-1 rounded-lg px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. 0241234567"
+                value={verifyNumber}
+                onChange={e => setVerifyNumber(e.target.value)}
+                required
+              />
+              <button
+                type="submit"
+                disabled={isVerifying || !verifyNumber}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+              >
+                {isVerifying ? 'Checking...' : 'Verify'}
+              </button>
+            </form>
+            {verifyResult && (
+              <div className={`mt-4 p-4 rounded-lg text-sm ${
+                verifyResult.success && verifyResult.data?.can_order
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-300'
+                  : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-300'
+              }`}>
+                {verifyResult.success && verifyResult.data ? (
+                  <div className="space-y-1">
+                    <p><span className="font-semibold">Allowed:</span> {verifyResult.data.allowed ? '✅ Yes' : '❌ No'}</p>
+                    <p><span className="font-semibold">Can Order:</span> {verifyResult.data.can_order ? '✅ Yes' : '❌ No'}</p>
+                    {verifyResult.data.pending_order && (
+                      <p className="text-xs mt-1 opacity-80">Pending order blocking this number.</p>
+                    )}
+                  </div>
+                ) : (
+                  <p>{verifyResult.message ?? 'Verification failed.'}</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Data Packages Section */}

@@ -1,5 +1,5 @@
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,9 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
     const [selectedProduct, setSelectedProduct] = useState('');
     const [agentPrice, setAgentPrice] = useState('');
     const [copied, setCopied] = useState(false);
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editPrice, setEditPrice] = useState('');
+    const [editSaving, setEditSaving] = useState(false);
     
     const { delete: destroy, processing } = useForm();
 
@@ -101,6 +104,30 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
     const handleRemoveProduct = (productId: number) => {
         destroy(`/dealer/products/${productId}`);
     };
+
+    const startEdit = (agentProduct: AgentProduct) => {
+        setEditingId(agentProduct.id);
+        setEditPrice(String(agentProduct.agent_price));
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setEditPrice('');
+    };
+
+    const saveEdit = (agentProductId: number) => {
+        if (!editPrice) return;
+        setEditSaving(true);
+        router.put(`/dealer/products/${agentProductId}`, { agent_price: editPrice }, {
+            onFinish: () => {
+                setEditSaving(false);
+                setEditingId(null);
+                setEditPrice('');
+            }
+        });
+    };
+
+
     return (
         <DashboardLayout
             user={auth.user}
@@ -273,19 +300,68 @@ export default function AgentDashboard({ auth, dashboardData, agentProducts, ava
                                         <div key={agentProduct.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 border rounded">
                                             <div className="flex-1">
                                                 <div className="font-medium text-sm sm:text-base">{agentProduct.product.name}</div>
-                                                <div className="text-xs sm:text-sm text-gray-500">
-                                                    Base: GHS {agentProduct.product.price} | Your Price: GHS {agentProduct.agent_price}
-                                                </div>
+                                                {editingId === agentProduct.id ? (
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="text-xs text-gray-500">Base: GHS {agentProduct.product.price} | New price:</span>
+                                                        <Input
+                                                            type="number"
+                                                            step="0.01"
+                                                            value={editPrice}
+                                                            onChange={(e) => setEditPrice(e.target.value)}
+                                                            className="w-24 h-7 text-sm"
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-xs sm:text-sm text-gray-500">
+                                                        Base: GHS {agentProduct.product.price} | Your Price: GHS {agentProduct.agent_price}
+                                                    </div>
+                                                )}
                                             </div>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => handleRemoveProduct(agentProduct.product.id)}
-                                                disabled={processing}
-                                                className="w-full sm:w-auto"
-                                            >
-                                                Remove
-                                            </Button>
+                                            <div className="flex gap-2">
+                                                {editingId === agentProduct.id ? (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => saveEdit(agentProduct.id)}
+                                                            disabled={editSaving || !editPrice}
+                                                            className="w-full sm:w-auto"
+                                                        >
+                                                            {editSaving ? 'Saving...' : 'Save'}
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={cancelEdit}
+                                                            disabled={editSaving}
+                                                            className="w-full sm:w-auto"
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => startEdit(agentProduct)}
+                                                            disabled={processing}
+                                                            className="w-full sm:w-auto"
+                                                        >
+                                                            Edit
+                                                        </Button>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => handleRemoveProduct(agentProduct.product.id)}
+                                                            disabled={processing}
+                                                            className="w-full sm:w-auto"
+                                                        >
+                                                            Remove
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                     {(!agentProducts || agentProducts.length === 0) && (

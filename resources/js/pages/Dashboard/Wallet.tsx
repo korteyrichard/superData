@@ -30,13 +30,16 @@ interface WalletPageProps extends PageProps {
       active: boolean;
     }[];
   };
+  settings?: {
+    how_to_verify_topup_youtube_link?: string;
+  };
 }
 
 
 
 
 
-export default function Wallet({ auth, transactions }: WalletPageProps) {
+export default function Wallet({ auth, transactions, settings }: WalletPageProps) {
      
      
 
@@ -142,12 +145,22 @@ export default function Wallet({ auth, transactions }: WalletPageProps) {
               GHS {auth.user.wallet_balance}
             </p>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
-          >
-            Top Up Wallet
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
+            >
+              Top Up Wallet
+            </button>
+            {settings?.how_to_verify_topup_youtube_link && (
+              <button
+                onClick={() => window.open(settings.how_to_verify_topup_youtube_link, '_blank')}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 w-full sm:w-auto"
+              >
+                How to Verify Top Up
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Transactions Table */}

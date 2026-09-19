@@ -59,10 +59,14 @@ interface AdminOrdersPageProps {
   auth: any;
   filterNetwork: string;
   filterStatus: string;
+  filterApiStatus: string;
+  filterEmail: string;
+  filterDate: string;
   searchOrderId: string;
   searchBeneficiaryNumber: string;
   dailySales: number;
   dailyCommissions: number;
+  allNetworks: string[];
   [key: string]: any;
 }
 
@@ -72,36 +76,42 @@ export default function AdminOrders() {
     auth,
     filterNetwork: initialNetworkFilter,
     filterStatus: initialStatusFilter,
+    filterApiStatus: initialApiStatusFilter,
+    filterEmail: initialEmailFilter,
+    filterDate: initialDateFilter,
     searchOrderId,
     searchBeneficiaryNumber,
     dailySales,
     dailyCommissions,
+    allNetworks,
   } = usePage<AdminOrdersPageProps>().props;
 
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [networkFilter, setNetworkFilter] = useState(initialNetworkFilter);
   const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
+  const [apiStatusFilter, setApiStatusFilter] = useState(initialApiStatusFilter);
+  const [emailFilter, setEmailFilter] = useState(initialEmailFilter);
+  const [dateFilter, setDateFilter] = useState(initialDateFilter);
   const [orderIdSearch, setOrderIdSearch] = useState(searchOrderId);
   const [beneficiarySearch, setBeneficiarySearch] = useState(searchBeneficiaryNumber);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [bulkStatus, setBulkStatus] = useState('');
+  const [retryingOrders, setRetryingOrders] = useState<number[]>([]);
 
-  const networks = Array.from(new Set(orders.data.map(o => o.network).filter(Boolean)));
+  const getCurrentFilters = () => ({
+    network: networkFilter || undefined,
+    status: statusFilter || undefined,
+    api_status: apiStatusFilter || undefined,
+    email: emailFilter || undefined,
+    date: dateFilter || undefined,
+    order_id: orderIdSearch || undefined,
+    beneficiary_number: beneficiarySearch || undefined,
+  });
 
-  const handleFilterChange = (filterName: string, value: string) => {
-    const params: Record<string, string | undefined> = {};
-    params[filterName] = value || undefined;
-    
-    if (filterName === 'network') {
-      setNetworkFilter(value);
-    } else if (filterName === 'status') {
-      setStatusFilter(value);
-    }
-    
+  const applyFilter = (key: string, value: string) => {
+    const params = { ...getCurrentFilters(), [key]: value || undefined };
     router.get(route('admin.orders'), params, { preserveState: true, replace: true });
   };
-
-
 
   const handleExpand = (orderId: number) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -144,8 +154,8 @@ export default function AdminOrders() {
   };
 
   const handleSelectOrder = (orderId: number) => {
-    setSelectedOrders(prev => 
-      prev.includes(orderId) 
+    setSelectedOrders(prev =>
+      prev.includes(orderId)
         ? prev.filter(id => id !== orderId)
         : [...prev, orderId]
     );
@@ -157,7 +167,7 @@ export default function AdminOrders() {
 
   const handleBulkStatusUpdate = () => {
     if (selectedOrders.length === 0 || !bulkStatus) return;
-    
+
     router.put(route('admin.orders.bulkUpdateStatus'), {
       order_ids: selectedOrders,
       status: bulkStatus
@@ -171,13 +181,37 @@ export default function AdminOrders() {
     });
   };
 
+  const handleRetryOrder = (orderId: number) => {
+    setRetryingOrders(prev => [...prev, orderId]);
+    router.post(route('admin.orders.retry', orderId), {}, {
+      onSuccess: () => router.reload(),
+      onError: () => alert('Failed to retry order.'),
+      onFinish: () => setRetryingOrders(prev => prev.filter(id => id !== orderId)),
+    });
+  };
+
+  const handleBulkRetry = () => {
+    const retryableIds = selectedOrders.filter(id => {
+      const order = orders.data.find(o => o.id === id);
+      return order && order.status === 'processing' && ['failed', 'disabled'].includes(order.api_status);
+    });
+    if (retryableIds.length === 0) return alert('No retryable orders selected (must be processing + failed/disabled).');
+    router.post(route('admin.orders.bulkRetry'), { order_ids: retryableIds }, {
+      onSuccess: () => { setSelectedOrders([]); router.reload(); },
+      onError: () => alert('Bulk retry failed.'),
+    });
+  };
+
+  const isRetryable = (order: Order) =>
+    order.status === 'processing' && ['failed', 'disabled'].includes(order.api_status);
+
   return (
     <AdminLayout
       user={auth?.user}
       header={<h2 className="text-3xl font-bold text-gray-800 dark:text-white">Orders</h2>}
     >
       <Head title="Admin Orders" />
-      <div className="max-w-6xl mx-auto py-10 px-2 sm:px-4">
+      <div className="max-w-7xl mx-auto py-10 px-2 sm:px-4">
         {/* Daily Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
@@ -234,18 +268,25 @@ export default function AdminOrders() {
                   Update
                 </button>
                 <button
+                  onClick={handleBulkRetry}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  Retry API Push
+                </button>
+                <button
                   onClick={() => {
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = route('admin.orders.export');
                     form.style.display = 'none';
-                    
+
                     const csrfInput = document.createElement('input');
                     csrfInput.type = 'hidden';
                     csrfInput.name = '_token';
                     csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                     form.appendChild(csrfInput);
-                    
+
                     selectedOrders.forEach(orderId => {
                       const input = document.createElement('input');
                       input.type = 'hidden';
@@ -253,7 +294,7 @@ export default function AdminOrders() {
                       input.value = orderId.toString();
                       form.appendChild(input);
                     });
-                    
+
                     document.body.appendChild(form);
                     form.submit();
                     document.body.removeChild(form);
@@ -277,12 +318,7 @@ export default function AdminOrders() {
                 className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
                 placeholder="Enter order ID"
                 value={orderIdSearch}
-                onChange={e => {
-                  setOrderIdSearch(e.target.value);
-                  router.get(route('admin.orders'), {
-                    order_id: e.target.value || undefined
-                  }, { preserveState: true, replace: true });
-                }}
+                onChange={e => { setOrderIdSearch(e.target.value); applyFilter('order_id', e.target.value); }}
               />
             </div>
             <div>
@@ -292,12 +328,26 @@ export default function AdminOrders() {
                 className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
                 placeholder="Enter beneficiary number"
                 value={beneficiarySearch}
-                onChange={e => {
-                  setBeneficiarySearch(e.target.value);
-                  router.get(route('admin.orders'), {
-                    beneficiary_number: e.target.value || undefined
-                  }, { preserveState: true, replace: true });
-                }}
+                onChange={e => { setBeneficiarySearch(e.target.value); applyFilter('beneficiary_number', e.target.value); }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter by Email</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
+                placeholder="Enter email"
+                value={emailFilter}
+                onChange={e => { setEmailFilter(e.target.value); applyFilter('email', e.target.value); }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter by Date</label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
+                value={dateFilter}
+                onChange={e => { setDateFilter(e.target.value); applyFilter('date', e.target.value); }}
               />
             </div>
             <div>
@@ -305,10 +355,10 @@ export default function AdminOrders() {
               <select
                 className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
                 value={networkFilter}
-                onChange={(e) => handleFilterChange('network', e.target.value)}
+                onChange={e => { setNetworkFilter(e.target.value); applyFilter('network', e.target.value); }}
               >
                 <option value="">All Networks</option>
-                {networks.map(network => (
+                {allNetworks.map(network => (
                   <option key={network} value={network}>{network}</option>
                 ))}
               </select>
@@ -318,13 +368,26 @@ export default function AdminOrders() {
               <select
                 className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
                 value={statusFilter}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
+                onChange={e => { setStatusFilter(e.target.value); applyFilter('status', e.target.value); }}
               >
                 <option value="">All Statuses</option>
                 <option value="pending">Pending</option>
                 <option value="processing">Processing</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter by API Status</label>
+              <select
+                className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-white shadow-sm focus:ring focus:ring-blue-500 text-sm"
+                value={apiStatusFilter}
+                onChange={e => { setApiStatusFilter(e.target.value); applyFilter('api_status', e.target.value); }}
+              >
+                <option value="">All API Statuses</option>
+                <option value="disabled">Disabled</option>
+                <option value="success">Success</option>
+                <option value="failed">Failed</option>
               </select>
             </div>
           </div>
@@ -337,7 +400,7 @@ export default function AdminOrders() {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-            <table className="min-w-[600px] w-full text-sm text-left text-gray-700 dark:text-gray-300">
+            <table className="min-w-full w-full text-sm text-left text-gray-700 dark:text-gray-300">
               <thead className="uppercase text-xs bg-gray-100 dark:bg-gray-700 dark:text-gray-300">
                 <tr>
                   <th className="px-3 sm:px-5 py-3 sm:py-4 w-12">
@@ -413,19 +476,40 @@ export default function AdminOrders() {
                       <td className="px-3 sm:px-5 py-3 sm:py-4 font-semibold">
                         {order.commission ? `GHS ${order.commission.amount}` : '-'}
                       </td>
-                      <td className="px-3 sm:px-5 py-3 sm:py-4 text-right space-x-2 sm:space-x-3">
-                        <button
-                          onClick={() => handleExpand(order.id)}
-                          className="text-blue-600 dark:text-blue-400 hover:underline text-xs sm:text-sm"
-                        >
-                          {expandedOrder === order.id ? 'Hide' : 'Details'}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteOrder(order.id)}
-                          className="text-red-500 hover:underline text-xs sm:text-sm"
-                        >
-                          Delete
-                        </button>
+                      <td className="px-3 sm:px-5 py-3 sm:py-4">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleExpand(order.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-xs font-medium transition-colors"
+                          >
+                            {expandedOrder === order.id ? (
+                              <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>Hide</>
+                            ) : (
+                              <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>Details</>
+                            )}
+                          </button>
+                          {isRetryable(order) && (
+                            <button
+                              onClick={() => handleRetryOrder(order.id)}
+                              disabled={retryingOrders.includes(order.id)}
+                              title="Retry API push"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/50 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {retryingOrders.includes(order.id) ? (
+                                <><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" /></svg>Retrying</>
+                              ) : (
+                                <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>Retry</>
+                              )}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteOrder(order.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-medium transition-colors"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
 
@@ -464,7 +548,7 @@ export default function AdminOrders() {
             </table>
           </div>
         )}
-        
+
         {/* Pagination */}
         <Pagination data={orders} />
       </div>

@@ -17,7 +17,7 @@ class CodeCraftOrderStatusSyncService
 
     public function __construct()
     {
-        $this->apiKey = env('CODECRAFT_API_KEY', '');
+        $this->apiKey = config('services.codecraft.api_key', '');
         $this->smsService = new SmsService();
         $this->commissionService = new CommissionService();
     }
@@ -53,8 +53,8 @@ class CodeCraftOrderStatusSyncService
 
         $isBigTime = stripos($order->network, 'big packages') !== false;
         $endpoint = $isBigTime 
-            ? $this->baseUrl . '/response_big_time.php'
-            : $this->baseUrl . '/response_regular.php';
+            ? $this->baseUrl . '/status_big_time.php'
+            : $this->baseUrl . '/status_regular.php';
 
         try {
             Log::info('Checking CodeCraft order status', [

@@ -49,6 +49,8 @@ class DealerWebController extends Controller
             ->whereNotIn('id', $dealerProducts->pluck('product_id'))
             ->get();
 
+        // No mashup packages available
+
         return Inertia::render('Dashboard/AgentDashboard', [
             'dashboardData' => $dashboardData,
             'agentProducts' => $dealerProducts,
@@ -65,6 +67,19 @@ class DealerWebController extends Controller
             ->with('order')
             ->latest()
             ->paginate(20);
+
+        // Transform the data to ensure order exists
+        $commissions->getCollection()->transform(function ($commission) {
+            // Ensure order exists for commissions
+            if (!$commission->order && $commission->order_id) {
+                // If order is somehow null, create a placeholder
+                $commission->order = (object) [
+                    'id' => $commission->order_id,
+                    'total' => 0
+                ];
+            }
+            return $commission;
+        });
 
         // Calculate totals from all commissions, not just paginated data
         $totalEarnings = $user->commissions()->sum('amount');
@@ -216,6 +231,22 @@ class DealerWebController extends Controller
             ]);
             return redirect()->back()->with('error', $e->getMessage());
         }
+    }
+
+    public function updateProduct(Request $request, \App\Models\AgentProduct $agentProduct)
+    {
+        $shop = $request->user()->agentShop;
+        if (!$shop || $agentProduct->agent_shop_id !== $shop->id) {
+            return redirect()->back()->with('error', 'Product not found in your shop');
+        }
+
+        $validated = $request->validate([
+            'agent_price' => 'required|numeric|min:0'
+        ]);
+
+        $agentProduct->update(['agent_price' => $validated['agent_price']]);
+
+        return redirect()->back()->with('success', 'Price updated successfully');
     }
 
     public function removeProduct(Request $request, Product $product)

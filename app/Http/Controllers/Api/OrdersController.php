@@ -9,8 +9,12 @@ use App\Models\Setting;
 use App\Models\Transaction;
 use App\Services\OrderPusherService;
 use App\Services\CodeCraftOrderPusherService;
+use App\Services\CodeCraftMtnOrderPusherService;
 use App\Services\ProdataWorldOrderPusherService;
 use App\Services\DataEasyOrderPusherService;
+use App\Services\DataFlowOrderPusherService;
+use App\Services\BundlePortalMtnOrderPusherService;
+use App\Services\BundlePortalOrderPusherService;
 use App\Services\CommissionService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -117,9 +121,16 @@ class OrdersController extends Controller
             // Push order to external API
             try {
                 if ($this->isMtnOrder($order)) {
-                    // Check if ProdataWorld API is enabled for MTN
-                    // Check if DataEasy API is enabled for MTN
-                    if (Setting::get('dataeasy_api_enabled', 'false') === 'true') {
+                    if (Setting::get('bundleportal_mtn_api_enabled', 'false') === 'true') {
+                        $orderPusher = new BundlePortalMtnOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } elseif (Setting::get('codecraft_mtn_api_enabled', 'false') === 'true') {
+                        $orderPusher = new CodeCraftMtnOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } elseif (Setting::get('dataflow_api_enabled', 'false') === 'true') {
+                        $orderPusher = new DataFlowOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } elseif (Setting::get('dataeasy_api_enabled', 'false') === 'true') {
                         $orderPusher = new DataEasyOrderPusherService();
                         $orderPusher->pushOrderToApi($order);
                     } elseif (Setting::get('prodataworld_api_enabled', 'false') === 'true') {
@@ -130,8 +141,13 @@ class OrdersController extends Controller
                         $orderPusher->pushOrderToApi($order);
                     }
                 } else {
-                    $orderPusher = new CodeCraftOrderPusherService();
-                    $orderPusher->pushOrderToApi($order);
+                    if (Setting::get('bundleportal_api_enabled', 'false') === 'true') {
+                        $orderPusher = new BundlePortalOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    } else {
+                        $orderPusher = new CodeCraftOrderPusherService();
+                        $orderPusher->pushOrderToApi($order);
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error('Failed to push API order to external service', ['error' => $e->getMessage()]);

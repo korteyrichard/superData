@@ -49,5 +49,27 @@ return [
         'base_url' => env('DATAEASY_BASE_URL', 'https://dataeasy.onrender.com/api/v1'),
         'api_key' => env('DATAEASY_API_KEY'),
     ],
+    'dataflow' => [
+        'base_url' => env('DATAFLOW_BASE_URL', 'https://dataflowghana.com/api/v1'),
+        'api_key'  => env('DATAFLOW_API_KEY'),
+    ],
+
+    'order_pusher' => [
+        'base_url' => env('ORDER_PUSHER_BASE_URL', ''),
+        'api_key'  => env('ORDER_PUSHER_API_KEY', ''),
+    ],
+
+    'codecraft' => [
+        'api_key' => env('CODECRAFT_API_KEY', ''),
+    ],
+
+    'prodataworld' => [
+        'api_key' => env('PRODATAWORLD_API_KEY', ''),
+    ],
+
+    'bundleportal' => [
+        'base_url' => env('BUNDLEPORTAL_BASE_URL', 'https://api.bundleportal.com/v1'),
+        'api_key'  => env('BUNDLEPORTAL_API_KEY', ''),
+    ],
 
 ];

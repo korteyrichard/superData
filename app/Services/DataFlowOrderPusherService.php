@@ -14,8 +14,8 @@ class DataFlowOrderPusherService
 
     public function __construct()
     {
-        $this->baseUrl = env('DATAFLOW_BASE_URL', 'https://dataflowghana.com/api/v1');
-        $this->apiKey = env('DATAFLOW_API_KEY');
+        $this->baseUrl = config('services.dataflow.base_url');
+        $this->apiKey  = config('services.dataflow.api_key');
     }
 
     public function pushOrderToApi(Order $order)

@@ -7,6 +7,8 @@ use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Services\CommissionService;
+use App\Services\CommissionValidationService;
+use App\Services\ReferralService;
 use App\Services\CodeCraftOrderPusherService;
 use App\Services\CodeCraftOrderStatusSyncService;
 use App\Services\CodeCraftMtnOrderStatusSyncService;
@@ -14,12 +16,15 @@ use App\Services\ProdataWorldOrderPusherService;
 use App\Services\DataEasyOrderPusherService;
 use App\Services\DataEasyOrderStatusSyncService;
 use App\Services\DataFlowOrderStatusSyncService;
+use App\Services\BundlePortalMtnOrderStatusSyncService;
+use App\Services\BundlePortalOrderStatusSyncService;
 
 class OrderStatusSyncService
 {
     private $jaybartApiKey;
     private $moolreSmsService;
     private $commissionService;
+    private $referralService;
     private $codeCraftService;
     private $codeCraftSyncService;
     private $codeCraftMtnSyncService;
@@ -27,12 +32,15 @@ class OrderStatusSyncService
     private $dataEasyService;
     private $dataEasySyncService;
     private $dataFlowSyncService;
+    private $bundlePortalMtnSyncService;
+    private $bundlePortalSyncService;
 
     public function __construct()
     {
-        $this->jaybartApiKey = env('ORDER_PUSHER_API_KEY', '75dc87ab33239934578afbf81a9dee777d591e4f');
+        $this->jaybartApiKey = config('services.order_pusher.api_key', '75dc87ab33239934578afbf81a9dee777d591e4f');
         $this->moolreSmsService = new SmsService();
         $this->commissionService = new CommissionService();
+        $this->referralService = new ReferralService(new CommissionValidationService());
         $this->codeCraftService = new CodeCraftOrderPusherService();
         $this->codeCraftSyncService = new CodeCraftOrderStatusSyncService();
         $this->codeCraftMtnSyncService = new CodeCraftMtnOrderStatusSyncService();
@@ -40,6 +48,8 @@ class OrderStatusSyncService
         $this->dataEasyService = new DataEasyOrderPusherService();
         $this->dataEasySyncService = new DataEasyOrderStatusSyncService();
         $this->dataFlowSyncService = new DataFlowOrderStatusSyncService();
+        $this->bundlePortalMtnSyncService = new BundlePortalMtnOrderStatusSyncService();
+        $this->bundlePortalSyncService = new BundlePortalOrderStatusSyncService();
     }
 
     public function syncOrderStatuses()
@@ -88,6 +98,20 @@ class OrderStatusSyncService
             $this->dataFlowSyncService->syncOrderStatuses();
         } catch (\Exception $e) {
             Log::error('Failed to run DataFlow sync service', ['error' => $e->getMessage()]);
+        }
+        
+        // Also run the dedicated Bundle Portal MTN sync service
+        try {
+            $this->bundlePortalMtnSyncService->syncOrderStatuses();
+        } catch (\Exception $e) {
+            Log::error('Failed to run Bundle Portal MTN sync service', ['error' => $e->getMessage()]);
+        }
+
+        // Also run the dedicated Bundle Portal sync service (Telecel/AT)
+        try {
+            $this->bundlePortalSyncService->syncOrderStatuses();
+        } catch (\Exception $e) {
+            Log::error('Failed to run Bundle Portal sync service (Telecel/AT)', ['error' => $e->getMessage()]);
         }
     }
 
@@ -170,6 +194,9 @@ class OrderStatusSyncService
                         
                         // Make commission available when order is completed
                         $this->commissionService->makeCommissionAvailable($order);
+                        
+                        // Create order-based referral commission
+                        $this->referralService->createOrderBasedReferralCommission($order);
                     }
                     
                     // Reverse commission if order is cancelled
@@ -301,6 +328,9 @@ class OrderStatusSyncService
                         
                         // Make commission available when order is completed
                         $this->commissionService->makeCommissionAvailable($order);
+                        
+                        // Create order-based referral commission
+                        $this->referralService->createOrderBasedReferralCommission($order);
                     }
                     
                     // Reverse commission if order is cancelled
@@ -373,6 +403,9 @@ class OrderStatusSyncService
                         
                         // Make commission available when order is completed
                         $this->commissionService->makeCommissionAvailable($order);
+                        
+                        // Create order-based referral commission
+                        $this->referralService->createOrderBasedReferralCommission($order);
                     }
                     
                     // Reverse commission if order is cancelled
@@ -488,6 +521,9 @@ class OrderStatusSyncService
                         
                         // Make commission available when order is completed
                         $this->commissionService->makeCommissionAvailable($order);
+                        
+                        // Create order-based referral commission
+                        $this->referralService->createOrderBasedReferralCommission($order);
                     }
                     
                     // Reverse commission if order is cancelled

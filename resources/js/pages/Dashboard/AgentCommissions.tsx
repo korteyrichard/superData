@@ -11,10 +11,10 @@ interface Commission {
     status: string;
     created_at: string;
     available_at?: string;
-    order: {
+    order?: {
         id: number;
         total: number;
-    };
+    } | null;
 }
 
 interface AgentCommissionsProps extends PageProps {
@@ -128,27 +128,37 @@ export default function AgentCommissions({ auth, commissions, totals }: AgentCom
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {commissions.data.map((commission, index) => (
-                                            <tr key={commission.id} className={`border-b hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                                                <td className="p-4">
-                                                    <span className="font-mono text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                                        #{commission.order.id}
-                                                    </span>
-                                                </td>
-                                                <td className="p-4 font-semibold text-gray-700">GHS {commission.order.total}</td>
-                                                <td className="p-4">
-                                                    <span className="font-bold text-green-600 text-lg">GHS {commission.amount}</span>
-                                                </td>
-                                                <td className="p-4">{getStatusBadge(commission.status)}</td>
-                                                <td className="p-4 text-sm text-gray-500">
-                                                    {new Date(commission.created_at).toLocaleDateString('en-US', {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric'
-                                                    })}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {commissions.data.map((commission, index) => {
+                                            // Safety check - skip if commission or order is problematic
+                                            if (!commission || !commission.order) {
+                                                console.warn('Skipping commission with missing order data:', commission);
+                                                return null;
+                                            }
+                                            
+                                            return (
+                                                <tr key={commission.id} className={`border-b hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                                                    <td className="p-4">
+                                                        <span className="font-mono text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                                            #{commission.order.id}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4 font-semibold text-gray-700">
+                                                        GHS {commission.order.total}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className="font-bold text-green-600 text-lg">GHS {commission.amount}</span>
+                                                    </td>
+                                                    <td className="p-4">{getStatusBadge(commission.status)}</td>
+                                                    <td className="p-4 text-sm text-gray-500">
+                                                        {new Date(commission.created_at).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'short',
+                                                            day: 'numeric'
+                                                        })}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }).filter(Boolean)}
                                     </tbody>
                                 </table>
                             </div>

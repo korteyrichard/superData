@@ -12,7 +12,7 @@ interface Product {
   status: 'IN STOCK' | 'OUT OF STOCK';
   price: number;
   description?: string;
-  product_type: 'agent_product' | 'customer_product' | 'dealer_product';
+  product_type: 'agent_product' | 'customer_product' | 'dealer_product' | 'elite_product';
 }
 
 interface AdminProductsProps extends PageProps {
@@ -38,7 +38,7 @@ export default function AdminProducts({
     network: '',
     status: 'IN STOCK' as 'IN STOCK' | 'OUT OF STOCK',
     price: '',
-    product_type: 'customer_product' as 'agent_product' | 'customer_product' | 'dealer_product',
+    product_type: 'customer_product' as 'agent_product' | 'customer_product' | 'dealer_product' | 'elite_product',
   });
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,6 +97,26 @@ export default function AdminProducts({
     }
   };
 
+  const handleMtnOutOfStock = () => {
+    if (confirm('Are you sure you want to set ALL MTN products OUT OF STOCK at once?')) {
+      router.post(route('admin.products.mtn.out-of-stock'), {}, {
+        onSuccess: () => {
+          router.reload({ only: ['products'] });
+        },
+      });
+    }
+  };
+
+  const handleMtnInStock = () => {
+    if (confirm('Are you sure you want to set ALL MTN products IN STOCK at once?')) {
+      router.post(route('admin.products.mtn.in-stock'), {}, {
+        onSuccess: () => {
+          router.reload({ only: ['products'] });
+        },
+      });
+    }
+  };
+
   return (
     <AdminLayout
       user={auth.user}
@@ -108,12 +128,26 @@ export default function AdminProducts({
         <div className="bg-white dark:bg-gray-900 shadow rounded-xl p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white">Product List</h3>
-            <button
-              onClick={() => setShowAddProductModal(true)}
-              className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              Add Product
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button
+                onClick={handleMtnInStock}
+                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              >
+                MTN In Stock
+              </button>
+              <button
+                onClick={handleMtnOutOfStock}
+                className="w-full sm:w-auto px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
+              >
+                MTN Out of Stock
+              </button>
+              <button
+                onClick={() => setShowAddProductModal(true)}
+                className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              >
+                Add Product
+              </button>
+            </div>
           </div>
 
           <div className="mb-6">
@@ -153,10 +187,12 @@ export default function AdminProducts({
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
                           product.product_type === 'agent_product' ? 'bg-purple-100 text-purple-800' : 
                           product.product_type === 'dealer_product' ? 'bg-green-100 text-green-800' : 
+                          product.product_type === 'elite_product' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-blue-100 text-blue-800'
                         }`}>
                           {product.product_type === 'agent_product' ? 'Agent' : 
-                           product.product_type === 'dealer_product' ? 'Dealer' : 'Customer'}
+                           product.product_type === 'dealer_product' ? 'Dealer' : 
+                           product.product_type === 'elite_product' ? 'Elite' : 'Customer'}
                         </span>
                       </td>
                       <td className="px-2 sm:px-6 py-4 text-gray-700 dark:text-gray-300 whitespace-nowrap">{product.price}</td>
@@ -301,12 +337,13 @@ export default function AdminProducts({
                 <select
                   id="product_type"
                   value={data.product_type}
-                  onChange={(e) => setData('product_type', e.target.value as 'agent_product' | 'customer_product' | 'dealer_product')}
+                  onChange={(e) => setData('product_type', e.target.value as 'agent_product' | 'customer_product' | 'dealer_product' | 'elite_product')}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                   <option value="customer_product">Customer Product</option>
                   <option value="agent_product">Agent Product</option>
                   <option value="dealer_product">Dealer Product</option>
+                  <option value="elite_product">Elite Product</option>
                 </select>
                 {errors.product_type && <p className="text-red-500 text-xs mt-1">{errors.product_type}</p>}
               </div>
@@ -447,12 +484,13 @@ export default function AdminProducts({
                 <select
                   id="edit-product_type"
                   value={data.product_type}
-                  onChange={(e) => setData('product_type', e.target.value as 'agent_product' | 'customer_product' | 'dealer_product')}
+                  onChange={(e) => setData('product_type', e.target.value as 'agent_product' | 'customer_product' | 'dealer_product' | 'elite_product')}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                   <option value="customer_product">Customer Product</option>
                   <option value="agent_product">Agent Product</option>
                   <option value="dealer_product">Dealer Product</option>
+                  <option value="elite_product">Elite Product</option>
                 </select>
                 {errors.product_type && <p className="text-red-500 text-xs mt-1">{errors.product_type}</p>}
               </div>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CheckoutController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\WalletController;
@@ -26,9 +27,13 @@ Route::get('/become-a-dealer', function () {
             }
         }
         
+        // Get agent fee setting
+        $agentFee = (float) \App\Models\Setting::get('agent_fee', '0.00');
+        
         return Inertia::render('AgentUpgrade', [
             'existingReferralCode' => $existingReferral,
-            'userRole' => $user ? $user->role : null
+            'userRole' => $user ? $user->role : null,
+            'agentFee' => $agentFee
         ]);
     })->name('become-a-dealer');
 
@@ -53,6 +58,7 @@ Route::middleware(['auth', 'verified', 'role:dealer'])->group(function () {
     // Web-based dealer actions (no API key required)
     Route::post('/dealer/withdraw', [\App\Http\Controllers\DealerWebController::class, 'requestWithdrawal'])->name('dealer.withdraw');
     Route::post('/dealer/products', [\App\Http\Controllers\DealerWebController::class, 'addProduct'])->name('dealer.products.add');
+    Route::put('/dealer/products/{agentProduct}', [\App\Http\Controllers\DealerWebController::class, 'updateProduct'])->name('dealer.products.update');
     Route::delete('/dealer/products/{product}', [\App\Http\Controllers\DealerWebController::class, 'removeProduct'])->name('dealer.products.remove');
     
     // Debug route for testing
@@ -116,6 +122,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Wallet balance route
     Route::post('/dashboard/wallet/add', [DashboardController::class, 'addToWallet'])->name('dashboard.wallet.add');
+    Route::post('/dashboard/verify-number', [DashboardController::class, 'verifyNumber'])->name('dashboard.verify-number');
     Route::get('/wallet/callback', [DashboardController::class, 'handleWalletCallback'])->name('wallet.callback');
     Route::post('/dashboard/wallet/verify', [WalletController::class, 'verifyPayment'])->name('dashboard.wallet.verify');
 
@@ -142,6 +149,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->name('admin.')->group(fun
     Route::post('admin/products', [\App\Http\Controllers\AdminDashboardController::class, 'storeProduct'])->name('products.store');
     Route::put('admin/products/{product}', [\App\Http\Controllers\AdminDashboardController::class, 'updateProduct'])->name('products.update');
     Route::delete('admin/products/{product}', [\App\Http\Controllers\AdminDashboardController::class, 'deleteProduct'])->name('products.delete');
+    Route::post('admin/products/mtn/out-of-stock', [\App\Http\Controllers\AdminDashboardController::class, 'bulkMtnOutOfStock'])->name('products.mtn.out-of-stock');
+    Route::post('admin/products/mtn/in-stock', [\App\Http\Controllers\AdminDashboardController::class, 'bulkMtnInStock'])->name('products.mtn.in-stock');
     Route::get('admin/orders', [\App\Http\Controllers\AdminDashboardController::class, 'orders'])->name('orders');
     Route::delete('admin/orders/{order}', [\App\Http\Controllers\AdminDashboardController::class, 'deleteOrder'])->name('orders.delete');
     Route::put('admin/orders/{order}/status', [\App\Http\Controllers\AdminDashboardController::class, 'updateOrderStatus'])->name('orders.updateStatus');
@@ -149,18 +158,25 @@ Route::middleware(['auth', 'verified', 'role:admin'])->name('admin.')->group(fun
     Route::get('admin/transactions', [\App\Http\Controllers\AdminDashboardController::class, 'transactions'])->name('transactions');
     Route::get('admin/users/{user}/transactions', [\App\Http\Controllers\AdminDashboardController::class, 'userTransactions'])->name('users.transactions');
     Route::post('admin/orders/export', [\App\Http\Controllers\AdminDashboardController::class, 'exportOrders'])->name('orders.export');
+    Route::post('admin/orders/bulk-retry', [\App\Http\Controllers\AdminDashboardController::class, 'bulkRetryOrders'])->name('orders.bulkRetry');
+    Route::post('admin/orders/{order}/retry', [\App\Http\Controllers\AdminDashboardController::class, 'retryOrder'])->name('orders.retry');
     Route::post('admin/api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleApi'])->name('api.toggle');
     Route::post('admin/codecraft-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleCodeCraftApi'])->name('codecraft-api.toggle');
     Route::post('admin/codecraft-mtn-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleCodeCraftMtnApi'])->name('codecraft-mtn-api.toggle');
     Route::post('admin/prodataworld-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleProdataWorldApi'])->name('prodataworld-api.toggle');
     Route::post('admin/dataeasy-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleDataEasyApi'])->name('dataeasy-api.toggle');
     Route::post('admin/dataflow-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleDataFlowApi'])->name('dataflow-api.toggle');
+    Route::post('admin/bundleportal-mtn-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleBundlePortalMtnApi'])->name('bundleportal-mtn-api.toggle');
+    Route::post('admin/bundleportal-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleBundlePortalApi'])->name('bundleportal-api.toggle');
     Route::get('admin/alerts', [\App\Http\Controllers\AdminDashboardController::class, 'alerts'])->name('alerts');
     Route::post('admin/alerts', [\App\Http\Controllers\AdminDashboardController::class, 'storeAlert'])->name('alerts.store');
     Route::put('admin/alerts/{alert}', [\App\Http\Controllers\AdminDashboardController::class, 'updateAlert'])->name('alerts.update');
     Route::delete('admin/alerts/{alert}', [\App\Http\Controllers\AdminDashboardController::class, 'deleteAlert'])->name('alerts.delete');
     Route::get('admin/commissions', [\App\Http\Controllers\AdminDashboardController::class, 'commissions'])->name('commissions');
     Route::post('admin/referral-commissions/{referralCommission}/available', [\App\Http\Controllers\AdminDashboardController::class, 'makeReferralCommissionAvailable'])->name('referral-commissions.available');
+    Route::get('admin/settings', [\App\Http\Controllers\AdminSettingsController::class, 'index'])->name('settings');
+    Route::post('admin/settings', [\App\Http\Controllers\AdminSettingsController::class, 'update'])->name('settings.update');
+    
 });
 
 // Paystack payment routes
@@ -175,3 +191,63 @@ Route::get('/payment/failed', function () { return 'Payment Failed!'; })->name('
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/debug.php'; // Temporary debug routes
+
+// Webhook routes (accessible without /api/ prefix)
+Route::post('/webhook/status', [\App\Http\Controllers\WebhookController::class, 'handleOrderStatus']);
+Route::any('/webhook/debug', function(\Illuminate\Http\Request $request) {
+    \Log::info('WEB DEBUG: Webhook endpoint hit', [
+        'method' => $request->method(),
+        'url' => $request->fullUrl(),
+        'headers' => $request->headers->all(),
+        'body' => $request->getContent(),
+        'ip' => $request->ip(),
+        'user_agent' => $request->userAgent()
+    ]);
+    return response()->json(['status' => 'received from web routes', 'timestamp' => now()]);
+});
+
+// DEBUG SHOP ROUTE - REMOVE AFTER TESTING
+Route::get('/debug-shops', function() {
+    $shops = \App\Models\AgentShop::with(['user', 'agentProducts.product'])->get();
+    
+    $shopData = $shops->map(function($shop) {
+        return [
+            'id' => $shop->id,
+            'username' => $shop->username,
+            'name' => $shop->name,
+            'is_active' => $shop->is_active,
+            'owner' => $shop->user ? $shop->user->name : 'No user',
+            'owner_id' => $shop->user_id,
+            'owner_role' => $shop->user ? $shop->user->role : 'Unknown',
+            'products_count' => $shop->agentProducts->count(),
+            'active_products' => $shop->agentProducts->where('is_active', true)->count(),
+            'shop_url' => url("/shop/{$shop->username}"),
+            'username_valid' => preg_match('/^[a-zA-Z0-9_-]+$/', $shop->username),
+            'created_at' => $shop->created_at,
+            'updated_at' => $shop->updated_at
+        ];
+    });
+    
+    return response()->json([
+        'total_shops' => $shops->count(),
+        'active_shops' => $shops->where('is_active', true)->count(),
+        'inactive_shops' => $shops->where('is_active', false)->count(),
+        'shops' => $shopData
+    ]);
+})->name('debug.shops');
+
+
+
+// Test logging route - will be removed after testing
+Route::get('/test-logging', function() {
+    \Log::emergency('TEST LOG - EMERGENCY LEVEL');
+    \Log::error('TEST LOG - ERROR LEVEL');  
+    \Log::warning('TEST LOG - WARNING LEVEL');
+    \Log::info('TEST LOG - INFO LEVEL');
+    
+    return response()->json([
+        'message' => 'Test logs written',
+        'log_channel' => config('logging.default'),
+        'log_file' => storage_path('logs/laravel.log')
+    ]);
+})->name('test.logging');

@@ -14,8 +14,8 @@ class OrderPusherService
 
     public function __construct()
     {
-        $this->baseUrl = env('ORDER_PUSHER_BASE_URL', '');
-        $this->apiKey = env('ORDER_PUSHER_API_KEY', '');
+        $this->baseUrl = config('services.order_pusher.base_url', '');
+        $this->apiKey = config('services.order_pusher.api_key', '');
     }
 
     public function pushOrderToApi(Order $order)

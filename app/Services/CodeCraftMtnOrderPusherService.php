@@ -14,7 +14,7 @@ class CodeCraftMtnOrderPusherService
 
     public function __construct()
     {
-        $this->apiKey = env('CODECRAFT_API_KEY', '');
+        $this->apiKey = config('services.codecraft.api_key', '');
         
         if (empty($this->apiKey)) {
             Log::error('CodeCraft API key is not configured');

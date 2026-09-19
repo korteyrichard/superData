@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->decimal('price', 10, 2);
-            $table->text('description');
-            $table->string('network');
-            $table->enum('expiry', ['non expiry', '30 days', '24 hours'])->default('non expiry');
-            $table->string('quantity');
-            $table->enum('status', ['IN STOCK', 'OUT OF STOCK'])->default('IN STOCK');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('products')) {
+            Schema::create('products', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->decimal('price', 10, 2);
+                $table->text('description');
+                $table->string('network');
+                $table->enum('expiry', ['non expiry', '30 days', '24 hours'])->default('non expiry');
+                $table->string('quantity');
+                $table->enum('status', ['IN STOCK', 'OUT OF STOCK'])->default('IN STOCK');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

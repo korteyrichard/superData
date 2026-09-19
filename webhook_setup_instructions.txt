@@ -1,0 +1,37 @@
+# Webhook Setup Instructions
+
+## Problem
+Your main site cannot reach http://localhost:8001 because localhost is only accessible on the same machine.
+
+## Solution: Use ngrok to expose your local server
+
+1. **Install ngrok:**
+   - Download from: https://ngrok.com/
+   - Or install via: `winget install ngrok.ngrok`
+
+2. **Expose your Laravel app:**
+   ```bash
+   ngrok http 8001
+   ```
+
+3. **Copy the public URL:**
+   - ngrok will show something like: https://abc123.ngrok.io
+   - Your webhook URL becomes: https://abc123.ngrok.io/api/webhook/status
+
+4. **Update your main site webhook configuration:**
+   - Replace: http://localhost:8001/webhook/status
+   - With: https://abc123.ngrok.io/api/webhook/status
+
+## Alternative Solution: Deploy to a public server
+
+If you have a public server, deploy your Laravel app there and use:
+- https://yourdomain.com/api/webhook/status
+
+## Testing
+
+Use the debug endpoint to test connectivity:
+- https://abc123.ngrok.io/api/webhook/debug
+
+## Current webhook endpoints:
+- POST /api/webhook/status - Main webhook handler
+- ANY /api/webhook/debug - Debug endpoint (logs all requests)

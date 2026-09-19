@@ -15,7 +15,7 @@ class CodeCraftMtnOrderStatusSyncService
 
     public function __construct()
     {
-        $this->apiKey = env('CODECRAFT_API_KEY', '');
+        $this->apiKey = config('services.codecraft.api_key', '');
         $this->smsService = new SmsService();
         $this->commissionService = new CommissionService();
     }
@@ -57,8 +57,8 @@ class CodeCraftMtnOrderStatusSyncService
         }
 
         $endpoint = $isBigTime
-            ? $this->baseUrl . '/response_big_time.php'
-            : $this->baseUrl . '/response_regular.php';
+            ? $this->baseUrl . '/status_big_time.php'
+            : $this->baseUrl . '/status_regular.php';
 
         try {
             $response = Http::timeout(30)

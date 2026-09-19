@@ -40,6 +40,7 @@ export default function Pagination({ data, preserveState = true }: PaginationPro
                 key={index}
                 href={link.url || '#'}
                 preserveState={preserveState}
+                preserveScroll
                 className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1 ${
                   link.url
                     ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -58,6 +59,7 @@ export default function Pagination({ data, preserveState = true }: PaginationPro
                 key={index}
                 href={link.url || '#'}
                 preserveState={preserveState}
+                preserveScroll
                 className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1 ${
                   link.url
                     ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -83,6 +85,7 @@ export default function Pagination({ data, preserveState = true }: PaginationPro
               key={index}
               href={link.url || '#'}
               preserveState={preserveState}
+              preserveScroll
               className={`px-3 py-2 rounded-md text-sm font-medium ${
                 link.active
                   ? 'bg-blue-600 text-white'

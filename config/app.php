@@ -135,4 +135,16 @@ return [
     'order_pusher_base_url' => env('ORDER_PUSHER_BASE_URL'),
     'order_pusher_api_key' => env('ORDER_PUSHER_API_KEY'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Order Recovery Feature Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for order recovery functionality.
+    |
+    */
+
+    'order_recovery_launch_date' => env('ORDER_RECOVERY_LAUNCH_DATE', '2026-07-30'),
+    'order_recovery_max_age_days' => (int) env('ORDER_RECOVERY_MAX_AGE_DAYS', 30),
+
 ];

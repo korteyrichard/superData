@@ -40,6 +40,8 @@ interface AdminDashboardProps extends PageProps {
   prodataWorldApiEnabled: boolean;
   dataEasyApiEnabled: boolean;
   dataFlowApiEnabled: boolean;
+  bundlePortalMtnApiEnabled: boolean;
+  bundlePortalApiEnabled: boolean;
 }
 
 const StatCard = ({ title, value }: { title: string; value: number | string }) => (
@@ -65,6 +67,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   prodataWorldApiEnabled,
   dataEasyApiEnabled,
   dataFlowApiEnabled,
+  bundlePortalMtnApiEnabled,
+  bundlePortalApiEnabled,
 }) => {
   const { auth } = usePage<AdminDashboardProps>().props;
   const [isApiEnabled, setIsApiEnabled] = useState(apiEnabled);
@@ -73,12 +77,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isProdataWorldApiEnabled, setIsProdataWorldApiEnabled] = useState(prodataWorldApiEnabled);
   const [isDataEasyApiEnabled, setIsDataEasyApiEnabled] = useState(dataEasyApiEnabled);
   const [isDataFlowApiEnabled, setIsDataFlowApiEnabled] = useState(dataFlowApiEnabled);
+  const [isBundlePortalMtnApiEnabled, setIsBundlePortalMtnApiEnabled] = useState(bundlePortalMtnApiEnabled);
+  const [isBundlePortalApiEnabled, setIsBundlePortalApiEnabled] = useState(bundlePortalApiEnabled);
   const [isToggling, setIsToggling] = useState(false);
   const [isCodeCraftToggling, setIsCodeCraftToggling] = useState(false);
   const [isCodeCraftMtnToggling, setIsCodeCraftMtnToggling] = useState(false);
   const [isProdataWorldToggling, setIsProdataWorldToggling] = useState(false);
   const [isDataEasyToggling, setIsDataEasyToggling] = useState(false);
   const [isDataFlowToggling, setIsDataFlowToggling] = useState(false);
+  const [isBundlePortalMtnToggling, setIsBundlePortalMtnToggling] = useState(false);
+  const [isBundlePortalToggling, setIsBundlePortalToggling] = useState(false);
 
   const handleApiToggle = () => {
     setIsToggling(true);
@@ -150,6 +158,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       },
       onError: () => {
         setIsDataEasyToggling(false);
+      },
+    });
+  };
+
+  const handleBundlePortalApiToggle = () => {
+    setIsBundlePortalToggling(true);
+    router.post(route('admin.bundleportal-api.toggle'), {
+      enabled: !isBundlePortalApiEnabled,
+    }, {
+      onSuccess: () => {
+        setIsBundlePortalApiEnabled(!isBundlePortalApiEnabled);
+        setIsBundlePortalToggling(false);
+      },
+      onError: () => {
+        setIsBundlePortalToggling(false);
+      },
+    });
+  };
+
+  const handleBundlePortalMtnApiToggle = () => {
+    setIsBundlePortalMtnToggling(true);
+    router.post(route('admin.bundleportal-mtn-api.toggle'), {
+      enabled: !isBundlePortalMtnApiEnabled,
+    }, {
+      onSuccess: () => {
+        setIsBundlePortalMtnApiEnabled(!isBundlePortalMtnApiEnabled);
+        setIsBundlePortalMtnToggling(false);
+      },
+      onError: () => {
+        setIsBundlePortalMtnToggling(false);
       },
     });
   };
@@ -343,6 +381,74 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                 }`}>
                   {isProdataWorldApiEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
+
+            {/* Bundle Portal API Toggle (Telecel/AT/Ishare) */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">Bundle Portal Order Pusher (Telecel, AT, Ishare)</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
+                    {isBundlePortalApiEnabled ? 'Telecel/AT/Ishare orders are being sent to Bundle Portal API' : 'Telecel/AT/Ishare orders are not being sent to Bundle Portal API'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleBundlePortalApiToggle}
+                  disabled={isBundlePortalToggling}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isBundlePortalApiEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                  } ${isBundlePortalToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isBundlePortalApiEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="mt-4">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  isBundlePortalApiEnabled
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  {isBundlePortalApiEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
+
+            {/* Bundle Portal MTN API Toggle */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">Bundle Portal Order Pusher MTN (MTN)</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
+                    {isBundlePortalMtnApiEnabled ? 'MTN orders are being sent to Bundle Portal API' : 'MTN orders are not being sent to Bundle Portal API'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleBundlePortalMtnApiToggle}
+                  disabled={isBundlePortalMtnToggling}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isBundlePortalMtnApiEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                  } ${isBundlePortalMtnToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isBundlePortalMtnApiEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="mt-4">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  isBundlePortalMtnApiEnabled
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  {isBundlePortalMtnApiEnabled ? 'Enabled' : 'Disabled'}
                 </span>
               </div>
             </div>

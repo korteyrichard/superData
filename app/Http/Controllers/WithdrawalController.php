@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Withdrawal;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -43,6 +44,7 @@ class WithdrawalController extends Controller
         return Inertia::render('Dashboard/AgentWithdrawals', [
             'withdrawals' => $withdrawals,
             'walletBalance' => max(0, $totalAvailable), // Ensure it doesn't go negative
+            'minimumWithdrawal' => (float) Setting::get('minimum_withdrawal', '10.00'),
             'earningsBreakdown' => [
                 'total_commissions' => $totalCommissions,
                 'available_commissions' => $availableCommissions,
@@ -84,19 +86,22 @@ class WithdrawalController extends Controller
             'requested_amount' => $request->amount
         ]);
 
+        $minimumWithdrawal = (float) Setting::get('minimum_withdrawal', '10.00');
+        
         $request->validate([
-            'amount' => 'required|numeric|min:50|max:' . $actualAvailable,
+            'amount' => 'required|numeric|min:' . $minimumWithdrawal . '|max:' . $actualAvailable,
             'network' => 'required|in:mtn,telecel',
             'mobile_money_account_name' => 'required|string|max:255',
             'mobile_money_number' => 'required|string|max:20',
         ]);
 
-        if ($actualAvailable < 50) {
+        if ($actualAvailable < $minimumWithdrawal) {
             \Log::warning('Insufficient balance for withdrawal', [
                 'actual_available' => $actualAvailable,
+                'minimum_required' => $minimumWithdrawal,
                 'user_id' => $request->user()->id
             ]);
-            return redirect()->back()->with('error', 'Insufficient available balance after pending withdrawals');
+            return redirect()->back()->with('error', 'Insufficient available balance. Minimum withdrawal is GHS ' . number_format($minimumWithdrawal, 2));
         }
 
         try {

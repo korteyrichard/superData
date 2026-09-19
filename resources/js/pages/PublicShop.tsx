@@ -36,9 +36,12 @@ interface PublicShopProps {
             email: string;
         }
     };
+    settings?: {
+        how_to_track_orders_youtube_link?: string;
+    };
 }
 
-export default function PublicShop({ shop, products, auth }: PublicShopProps) {
+export default function PublicShop({ shop, products, auth, settings }: PublicShopProps) {
     const [selectedNetwork, setSelectedNetwork] = useState<string>('all');
     const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(null);
     const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -99,6 +102,8 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
         setShowPurchaseModal(true);
     };
 
+
+
     const submitPurchase = (e: React.FormEvent) => {
         e.preventDefault();
         if (!auth?.user) {
@@ -110,6 +115,8 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
             }
         });
     };
+
+
 
     const handleTrackOrder = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -200,8 +207,16 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                 onClick={() => setShowTrackOrderModal(true)}
                                 className="mt-4 mr-3 bg-white/20 hover:bg-white/30 text-white border border-white/30 font-semibold px-6 py-2 rounded-full transition-all duration-300"
                             >
-                                📋 Track Order
+                                Track Order
                             </Button>
+                            {settings?.how_to_track_orders_youtube_link && (
+                                <Button 
+                                    onClick={() => window.open(settings.how_to_track_orders_youtube_link, '_blank')}
+                                    className="mt-4 mr-3 bg-red-500/80 hover:bg-red-600/80 text-white border border-red-400/50 font-semibold px-6 py-2 rounded-full transition-all duration-300"
+                                >
+                                    How to Track Orders
+                                </Button>
+                            )}
                             {shop.whatsapp_contact && (
                                 <Button 
                                     onClick={() => {
@@ -214,7 +229,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                     }}
                                     className="mt-4 bg-green-500 hover:bg-green-600 text-white border border-green-400 font-semibold px-6 py-2 rounded-full transition-all duration-300 shadow-lg"
                                 >
-                                    📱 Contact Dealer
+                                    Contact Dealer
                                 </Button>
                             )}
                         </div>
@@ -236,7 +251,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                             : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300 shadow-lg'
                                     }`}
                                 >
-                                    {network === 'all' ? '🌐 All Networks' : `📱 ${network}`}
+                                    {network === 'all' ? 'All Networks' : `${network}`}
                                 </button>
                             ))}
                         </div>
@@ -257,7 +272,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                                         : 'bg-red-100 text-red-800 border border-red-200'
                                                 }`}
                                             >
-                                                {product.status === 'IN STOCK' ? '✓ Available' : '⚠ Out of Stock'}
+                                                {product.status === 'IN STOCK' ? 'Available' : 'Out of Stock'}
                                             </Badge>
                                         </div>
                                         <div className="flex items-center space-x-2">
@@ -268,7 +283,11 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                     <CardContent className="pt-1">
                                         <div className="space-y-2">
                                             <div className="text-center py-3 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl">
-                                                <p className="text-xs text-gray-500 mb-1">Price</p>
+                                                <p className="text-xs text-gray-500 mb-1">Package Size</p>
+                                                <p className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-600">
+                                                    {product.quantity}
+                                                </p>
+                                                <p className="text-xs text-gray-500 mt-1">Price</p>
                                                 <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-600">
                                                     ₵{Number(product.agent_price).toFixed(2)}
                                                 </p>
@@ -287,7 +306,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                                 onClick={() => handlePurchase(product)}
                                                 disabled={product.status !== 'IN STOCK'}
                                             >
-                                                {product.status === 'IN STOCK' ? '💳 BUY NOW' : '⚠ OUT OF STOCK'}
+                                                {product.status === 'IN STOCK' ? 'BUY NOW' : 'OUT OF STOCK'}
                                             </Button>
                                         </div>
                                     </CardContent>
@@ -342,7 +361,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                             <input type="hidden" name="agent_username" value={data.agent_username} />
                             {!auth?.user && (
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">📧 Email Address</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
                                     <Input
                                         type="email"
                                         name="customer_email"
@@ -355,7 +374,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                 </div>
                             )}
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">📱 Beneficiary Phone Number</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Beneficiary Phone Number</label>
                                 <Input
                                     type="text"
                                     name="beneficiary_number"
@@ -382,7 +401,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                         className="font-bold text-lg"
                                         style={{ color: shop.color || '#1D4ED8' }}
                                     >
-                                        💰 Order Summary
+                                        Order Summary
                                     </span>
                                 </div>
                                 <div className="space-y-2">
@@ -427,7 +446,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                             : 'linear-gradient(135deg, #10B981, #059669)'
                                     }}
                                 >
-                                    {processing ? '⏳ Processing...' : '🚀 Place Order'}
+                                    {processing ? 'Processing...' : 'Place Order'}
                                 </Button>
                             </div>
                         </form>
@@ -460,7 +479,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
 
                             <form onSubmit={handleTrackOrder} className="space-y-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">📱 Beneficiary Phone Number</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Beneficiary Phone Number</label>
                                     <Input
                                         type="text"
                                         maxLength={10}
@@ -474,7 +493,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">💳 Paystack Reference</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">Paystack Reference</label>
                                     <Input
                                         type="text"
                                         value={trackingData.paystack_reference}
@@ -509,7 +528,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                                 : 'linear-gradient(135deg, #10B981, #059669)'
                                         }}
                                     >
-                                        {isTracking ? '⏳ Searching...' : '🔍 Track Order'}
+                                        {isTracking ? 'Searching...' : 'Track Order'}
                                     </Button>
                                 </div>
                             </form>
@@ -525,7 +544,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                     </svg>
                                                 </div>
-                                                <h4 className="text-lg font-bold text-green-800 mb-2">✅ Order Found!</h4>
+                                                <h4 className="text-lg font-bold text-green-800 mb-2">Order Found!</h4>
                                                 <div className="text-left space-y-2">
                                                     <p><strong>Order ID:</strong> #{trackingResult.order.id}</p>
                                                     <p><strong>Status:</strong> <span className="capitalize">{trackingResult.order.status}</span></p>
@@ -541,7 +560,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                     </svg>
                                                 </div>
-                                                <h4 className="text-lg font-bold text-green-800 mb-2">✨ Order Created Successfully!</h4>
+                                                <h4 className="text-lg font-bold text-green-800 mb-2">Order Created Successfully!</h4>
                                                 <p className="text-green-700">Your order has been recovered and is now being processed.</p>
                                                 <p className="text-sm text-gray-600 mt-2">Order ID: #{trackingResult.new_order.id}</p>
                                             </div>
@@ -552,7 +571,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
                                                     </svg>
                                                 </div>
-                                                <h4 className="text-lg font-bold text-yellow-800 mb-2">⚠ Order Not Found</h4>
+                                                <h4 className="text-lg font-bold text-yellow-800 mb-2">Order Not Found</h4>
                                                 <p className="text-yellow-700 mb-4">Your payment was verified but no order exists. You can create an order now.</p>
                                                 <div className="text-left bg-blue-50 p-4 rounded-xl mb-4">
                                                     <p className="text-sm"><strong>Payment Amount:</strong> ₵{trackingResult.payment_data.amount}</p>
@@ -591,7 +610,7 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
                                             </div>
-                                            <h4 className="text-lg font-bold text-red-800 mb-2">❌ Error</h4>
+                                            <h4 className="text-lg font-bold text-red-800 mb-2">Error</h4>
                                             <p className="text-red-700">{trackingResult.message}</p>
                                         </div>
                                     )}
@@ -601,6 +620,8 @@ export default function PublicShop({ shop, products, auth }: PublicShopProps) {
                     </div>
                 </div>
             )}
+
+
         </>
     );
 }

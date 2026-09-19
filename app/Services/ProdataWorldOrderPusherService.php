@@ -10,12 +10,12 @@ use Illuminate\Support\Facades\Log;
 class ProdataWorldOrderPusherService
 {
     private $apiKey;
-    private $baseUrl = 'https://www.prodataworld.com';
-    private const MTN_NETWORK_ID = 5;
+    private $baseUrl = 'http://localhost:8000';
+    private const MTN_NETWORK_ID =5;
 
     public function __construct()
     {
-        $this->apiKey = env('PRODATAWORLD_API_KEY', '');
+        $this->apiKey = config('services.prodataworld.api_key', '18|oamruqfztmodRtQDCPF2COaTnV27ny1Yv8kIfwDG23218cc5');
     }
 
     public function pushOrderToApi(Order $order)

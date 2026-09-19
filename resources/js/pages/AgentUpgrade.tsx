@@ -4,9 +4,10 @@ import { useEffect } from 'react';
 interface AgentUpgradeProps {
     existingReferralCode?: string;
     userRole?: string;
+    agentFee?: number;
 }
 
-export default function BecomeAnAgent({ existingReferralCode, userRole }: AgentUpgradeProps) {
+export default function BecomeAnAgent({ existingReferralCode, userRole, agentFee }: AgentUpgradeProps) {
     const { flash } = usePage().props as any;
     const { data, setData, post, processing, errors } = useForm({
         username: '',
@@ -15,7 +16,18 @@ export default function BecomeAnAgent({ existingReferralCode, userRole }: AgentU
 
     const isAgent = userRole === 'agent';
     const isCustomer = userRole === 'customer';
-    const price = isAgent ? 30 : 60;
+    
+    // Use agent fee from settings if available, otherwise use default pricing
+    const price = agentFee && agentFee > 0 ? agentFee : (isAgent ? 30 : 60);
+    
+    // Debug logging
+    console.log('AgentUpgrade component loaded:', {
+        userRole,
+        agentFee,
+        calculatedPrice: price,
+        isAgent,
+        isCustomer
+    });
 
     // Handle Paystack redirect
     useEffect(() => {

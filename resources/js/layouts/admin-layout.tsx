@@ -28,23 +28,49 @@ interface AdminLayoutProps {
   header?: React.ReactNode;
 }
 
-const adminNavigation: NavigationItem[] = [
-  { name: "Admin Dashboard", href: route("admin.dashboard"), icon: "Shield", current: route().current("admin.dashboard") },
-  { name: "Users", href: route("admin.users"), icon: "Users", current: route().current("admin.users") },
-  { name: "Products", href: route("admin.products"), icon: "Box", current: route().current("admin.products") },
-  { name: "Orders", href: route("admin.orders"), icon: "Package", current: route().current("admin.orders") },
-  { name: "Transactions", href: route("admin.transactions"), icon: "Receipt", current: route().current("admin.transactions") },
-  { name: "Dealers", href: route("admin.dealers"), icon: "UserCheck", current: route().current("admin.dealers") },
-  { name: "Commissions", href: route("admin.commissions"), icon: "DollarSign", current: route().current("admin.commissions") },
-  { name: "Withdrawals", href: route("admin.withdrawals"), icon: "CreditCard", current: route().current("admin.withdrawals") },
-  { name: "Alerts", href: route("admin.alerts"), icon: "Bell", current: route().current("admin.alerts") },
-  { name: "Settings", href: route("profile.edit"), icon: "Settings", current: route().current("profile.edit") || route().current("password.edit") || route().current("appearance") },
-];
-
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, user, header }) => {
   const handleLogout = () => {
     router.post(route('logout'));
   };
+
+  // Build navigation items with error handling
+  const buildNavigation = (): NavigationItem[] => {
+    const baseNavigation: NavigationItem[] = [
+      { name: "Admin Dashboard", href: route("admin.dashboard"), icon: "Shield", current: route().current("admin.dashboard") },
+      { name: "Users", href: route("admin.users"), icon: "Users", current: route().current("admin.users") },
+      { name: "Products", href: route("admin.products"), icon: "Box", current: route().current("admin.products") },
+      { name: "Orders", href: route("admin.orders"), icon: "Package", current: route().current("admin.orders") },
+      { name: "Transactions", href: route("admin.transactions"), icon: "Receipt", current: route().current("admin.transactions") },
+      { name: "Dealers", href: route("admin.dealers"), icon: "UserCheck", current: route().current("admin.dealers") },
+      { name: "Commissions", href: route("admin.commissions"), icon: "DollarSign", current: route().current("admin.commissions") },
+      { name: "Withdrawals", href: route("admin.withdrawals"), icon: "CreditCard", current: route().current("admin.withdrawals") },
+      { name: "Alerts", href: route("admin.alerts"), icon: "Bell", current: route().current("admin.alerts") },
+    ];
+
+    // Add admin settings if route exists
+    try {
+      baseNavigation.push({
+        name: "Admin Settings",
+        href: route("admin.settings"),
+        icon: "Settings2",
+        current: route().current("admin.settings")
+      });
+    } catch (error) {
+      console.warn('Admin settings route not available yet');
+    }
+
+    // Add profile settings
+    baseNavigation.push({
+      name: "Profile Settings",
+      href: route("profile.edit"),
+      icon: "Settings",
+      current: route().current("profile.edit") || route().current("password.edit") || route().current("appearance")
+    });
+
+    return baseNavigation;
+  };
+
+  const adminNavigation = buildNavigation();
 
   const renderNavigationItems = () =>
     adminNavigation.map((item) => (

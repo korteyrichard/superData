@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\AgentService;
 use App\Services\ReferralService;
 use App\Rules\UniqueAgentUsername;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
@@ -52,8 +53,25 @@ class DealerUpgradeController extends Controller
             return back()->withErrors(['message' => 'Please wait before attempting another upgrade']);
         }
 
-        // Set pricing based on user role
-        $amount = $user->role === 'agent' ? 3000 : 6000; // 30 GHS for agents, 60 GHS for customers
+        // Set pricing based on user role and settings
+        $agentFee = (float) Setting::get('agent_fee', '0.00');
+        
+        // If agent fee is set and > 0, use it as the base amount, otherwise use default pricing
+        if ($agentFee > 0) {
+            $amount = (int) ($agentFee * 100); // Convert GHS to kobo and cast to int
+        } else {
+            // Use default pricing when no agent fee is set
+            $amount = $user->role === 'agent' ? 3000 : 6000; // 30 GHS for agents, 60 GHS for customers
+        }
+        
+        \Log::info('Dealer upgrade pricing calculation', [
+            'user_role' => $user->role,
+            'agent_fee_setting' => $agentFee,
+            'final_amount_kobo' => $amount,
+            'final_amount_ghs' => $amount / 100,
+            'amount_type' => gettype($amount)
+        ]);
+        
         $description = $user->role === 'agent' ? 'Agent to dealer upgrade fee' : 'Customer to dealer upgrade fee';
         
         $reference = 'dealer_upgrade_' . time() . '_' . $user->id;
@@ -157,10 +175,24 @@ class DealerUpgradeController extends Controller
                         return redirect()->route('become-a-dealer')->withErrors(['message' => 'User not found']);
                     }
 
-                    // Verify amount matches expected based on original role
-                    $expectedAmount = $metadata['original_role'] === 'agent' ? 3000 : 6000;
+                    // Verify amount matches expected based on original role and settings
+                    $agentFee = (float) Setting::get('agent_fee', '0.00');
+                    
+                    // Calculate expected amount same way as in upgrade method
+                    if ($agentFee > 0) {
+                        $expectedAmount = (int) ($agentFee * 100); // Convert GHS to kobo and cast to int
+                    } else {
+                        // Use default pricing when no agent fee is set
+                        $expectedAmount = $metadata['original_role'] === 'agent' ? 3000 : 6000;
+                    }
+                    
                     if ($data['data']['amount'] !== $expectedAmount) {
-                        \Log::error('Dealer upgrade amount mismatch', ['expected' => $expectedAmount, 'actual' => $data['data']['amount']]);
+                        \Log::error('Dealer upgrade amount mismatch', [
+                            'expected' => $expectedAmount,
+                            'actual' => $data['data']['amount'],
+                            'expected_type' => gettype($expectedAmount),
+                            'actual_type' => gettype($data['data']['amount'])
+                        ]);
                         return redirect()->route('become-a-dealer')->withErrors(['message' => 'Payment amount verification failed']);
                     }
 
@@ -222,15 +254,22 @@ class DealerUpgradeController extends Controller
                             $referrer = User::where('referral_code', $metadata['referrer_code'])->first();
                             if ($referrer && $referrer->id !== $user->id) {
                                 \Log::info('Creating dealer upgrade referral commission', [
-                                    'referrer_id' => $referrer->id,
-                                    'amount' => 20.00
+                                    'referrer_id' => $referrer->id
                                 ]);
                                 
-                                $success = $this->referralService->createAgentUpgradeCommission($referrer->id, 20.00);
+                                // Get referral commission amount from settings
+                                $referralCommissionAmount = (float) Setting::get('referral_commission', '0.50');
+                                
+                                \Log::info('Dealer upgrade referral commission setting retrieved', [
+                                    'setting_value' => $referralCommissionAmount,
+                                    'referrer_id' => $referrer->id
+                                ]);
+                                
+                                $success = $this->referralService->createAgentUpgradeCommission($referrer->id, $referralCommissionAmount);
                                 if (!$success) {
                                     \Log::warning('Failed to create dealer upgrade referral commission', [
                                         'referrer_id' => $referrer->id,
-                                        'amount' => 20.00
+                                        'amount' => $referralCommissionAmount
                                     ]);
                                 }
                             }

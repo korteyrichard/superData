@@ -8,15 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('referral_code')->unique()->nullable()->after('api_key');
-        });
+        if (Schema::hasTable('users') && !Schema::hasColumn('users', 'referral_code')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('referral_code')->unique()->nullable();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('referral_code');
-        });
+        if (Schema::hasTable('users') && Schema::hasColumn('users', 'referral_code')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('referral_code');
+            });
+        }
     }
 };

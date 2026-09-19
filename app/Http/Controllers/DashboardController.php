@@ -136,6 +136,49 @@ class DashboardController extends Controller
         return redirect()->back()->with('error', 'Payment initialization failed');
     }
 
+    public function verifyNumber(Request $request)
+    {
+        $request->validate([
+            'recipient' => 'required|string',
+        ]);
+
+        $baseUrl = config('services.bundleportal.base_url');
+        $apiKey  = config('services.bundleportal.api_key');
+
+        try {
+            $payload = [
+                'action'    => 'verify_number',
+                'network'   => 'mtn',
+                'recipient' => $request->recipient,
+            ];
+
+            \Log::info('VerifyNumber request', [
+                'url'     => $baseUrl,
+                'payload' => $payload,
+            ]);
+
+            $response = Http::withHeaders([
+                'x-api-key'    => $apiKey,
+                'Accept'       => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->timeout(15)->post($baseUrl, $payload);
+
+            \Log::info('VerifyNumber response', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+
+            $result = $response->successful()
+                ? $response->json()
+                : ['success' => false, 'message' => 'API error: ' . $response->status() . ' - ' . $response->body()];
+        } catch (\Exception $e) {
+            \Log::error('VerifyNumber exception', ['message' => $e->getMessage()]);
+            $result = ['success' => false, 'message' => $e->getMessage()];
+        }
+
+        return back()->with('verify_result', $result);
+    }
+
     public function handleWalletCallback(Request $request)
     {
         $reference = $request->reference;
@@ -148,10 +191,20 @@ class DashboardController extends Controller
             $paymentData = $response->json('data');
             $metadata = $paymentData['metadata'];
             
-            $transaction = Transaction::find($metadata['transaction_id']);
-            $user = auth()->user();
-            
-            if ($transaction && $transaction->status === 'pending') {
+            // Use database transaction with row-level locking to prevent race conditions
+            $processed = \DB::transaction(function () use ($metadata) {
+                // Lock the transaction row to prevent concurrent processing
+                $transaction = Transaction::where('id', $metadata['transaction_id'])
+                    ->where('status', 'pending')
+                    ->lockForUpdate()
+                    ->first();
+                
+                if (!$transaction) {
+                    return false; // Transaction already processed or not found
+                }
+                
+                $user = $transaction->user;
+                
                 // Get the actual amount from metadata (excluding transaction fee)
                 $actualAmount = isset($metadata['actual_amount']) ? $metadata['actual_amount'] : $transaction->amount;
                 
@@ -168,9 +221,15 @@ class DashboardController extends Controller
                     $message = "Your wallet has been topped up with GHS " . number_format($actualAmount, 2) . ". New balance: GHS " . number_format($user->wallet_balance, 2);
                     $smsService->sendSms($user->phone, $message);
                 }
+                
+                return true;
+            });
+            
+            if ($processed) {
+                return redirect()->route('dashboard')->with('success', 'Wallet topped up successfully!');
             }
         }
 
-        return redirect()->route('dashboard')->with('success', 'Wallet topped up successfully!');
+        return redirect()->route('dashboard')->with('info', 'Transaction already processed or invalid.');
     }
 }

@@ -40,6 +40,11 @@ class Product extends Model
         return $query->where('product_type', 'dealer_product');
     }
 
+    public function scopeForElite($query)
+    {
+        return $query->where('product_type', 'elite_product');
+    }
+
     public function scopeInStock($query)
     {
         return $query->where('status', 'IN STOCK');
@@ -54,6 +59,8 @@ class Product extends Model
                 return $query->forAgents();
             case 'customer':
                 return $query->forCustomers();
+            case 'elite':
+                return $query->forElite();
             default:
                 return $query; // Admin sees all
         }
