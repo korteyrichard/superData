@@ -72,10 +72,20 @@ export default function Dashboard({ auth }: DashboardProps) {
   const [isVerifying, setIsVerifying] = useState(false);
   const verifyResult = flash?.verify_result ?? null;
 
-  const networkTabs = ['MTN', 'TELECEL', 'AT Data (Instant)', 'AT (Big Packages)'];
-  
-  // Fix filteredPackages typing and prop usage
-  const filteredPackages = products.filter(pkg => pkg.network === activeTab);
+  const getProductTabLabel = (product: Product) => {
+    const productName = (product.name ?? '').trim();
+
+    if (productName.toUpperCase() === 'MTN INSTANT') {
+      return 'MTN INSTANT';
+    }
+
+    return product.network;
+  };
+
+  const productTabs = Array.from(new Set(products.map(getProductTabLabel)));
+  const safeActiveTab = productTabs.includes(activeTab) ? activeTab : (productTabs[0] ?? 'MTN');
+
+  const filteredPackages = products.filter(pkg => getProductTabLabel(pkg) === safeActiveTab);
 
   // Order stats
   const totalOrders = orders?.length || 0;
@@ -339,20 +349,20 @@ export default function Dashboard({ auth }: DashboardProps) {
                     value={activeTab}
                     onChange={e => setActiveTab(e.target.value)}
                   >
-                    {networkTabs.map(network => (
+                    {productTabs.map((network) => (
                       <option key={network} value={network}>{network}</option>
                     ))}
                   </select>
                 </div>
                 {/* Desktop: Tab Buttons */}
                 <nav className="hidden sm:flex space-x-0 overflow-x-auto scrollbar-hide" aria-label="Network tabs">
-                  {networkTabs.map((network) => (
+                  {productTabs.map((network) => (
                     <button
                       key={network}
                       onClick={() => setActiveTab(network)}
                       className={`
                         relative min-w-0 flex-1 sm:flex-none sm:min-w-max whitespace-nowrap py-4 px-4 sm:px-6 text-sm font-medium text-center border-b-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800
-                        ${activeTab === network
+                        ${safeActiveTab === network
                           ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
                         }
@@ -360,7 +370,7 @@ export default function Dashboard({ auth }: DashboardProps) {
                     >
                       <span className="relative">
                         {network}
-                        {activeTab === network && (
+                        {safeActiveTab === network && (
                           <span className="absolute inset-x-0 -bottom-px h-0.5 bg-blue-500 rounded-full"></span>
                         )}
                       </span>

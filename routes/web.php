@@ -167,6 +167,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->name('admin.')->group(fun
     Route::post('admin/dataeasy-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleDataEasyApi'])->name('dataeasy-api.toggle');
     Route::post('admin/dataflow-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleDataFlowApi'])->name('dataflow-api.toggle');
     Route::post('admin/bundleportal-mtn-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleBundlePortalMtnApi'])->name('bundleportal-mtn-api.toggle');
+    Route::post('admin/bundleportal-mtn3-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleBundlePortalMtn3Api'])->name('bundleportal-mtn3-api.toggle');
     Route::post('admin/bundleportal-api/toggle', [\App\Http\Controllers\AdminDashboardController::class, 'toggleBundlePortalApi'])->name('bundleportal-api.toggle');
     Route::get('admin/alerts', [\App\Http\Controllers\AdminDashboardController::class, 'alerts'])->name('alerts');
     Route::post('admin/alerts', [\App\Http\Controllers\AdminDashboardController::class, 'storeAlert'])->name('alerts.store');

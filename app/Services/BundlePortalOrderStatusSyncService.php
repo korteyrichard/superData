@@ -20,10 +20,12 @@ class BundlePortalOrderStatusSyncService
 
     public function syncOrderStatuses(): void
     {
-        // Scope to Telecel and AT orders with a KT- reference (Bundle Portal)
         $orders = Order::whereIn('status', ['pending', 'processing'])
             ->whereNotNull('reference_id')
-            ->where('reference_id', 'like', 'KT-%')
+            ->where(function ($query) {
+                $query->where('reference_id', 'like', 'KT-%')
+                    ->orWhere('reference_id', 'like', 'SD-%');
+            })
             ->where(function ($q) {
                 $q->whereRaw('LOWER(network) LIKE ?', ['%telecel%'])
                   ->orWhereRaw('LOWER(network) LIKE ?', ['%at data%'])

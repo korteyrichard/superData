@@ -41,6 +41,7 @@ interface AdminDashboardProps extends PageProps {
   dataEasyApiEnabled: boolean;
   dataFlowApiEnabled: boolean;
   bundlePortalMtnApiEnabled: boolean;
+  bundlePortalMtn3ApiEnabled: boolean;
   bundlePortalApiEnabled: boolean;
 }
 
@@ -68,6 +69,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   dataEasyApiEnabled,
   dataFlowApiEnabled,
   bundlePortalMtnApiEnabled,
+  bundlePortalMtn3ApiEnabled,
   bundlePortalApiEnabled,
 }) => {
   const { auth } = usePage<AdminDashboardProps>().props;
@@ -78,6 +80,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isDataEasyApiEnabled, setIsDataEasyApiEnabled] = useState(dataEasyApiEnabled);
   const [isDataFlowApiEnabled, setIsDataFlowApiEnabled] = useState(dataFlowApiEnabled);
   const [isBundlePortalMtnApiEnabled, setIsBundlePortalMtnApiEnabled] = useState(bundlePortalMtnApiEnabled);
+  const [isBundlePortalMtn3ApiEnabled, setIsBundlePortalMtn3ApiEnabled] = useState(bundlePortalMtn3ApiEnabled);
   const [isBundlePortalApiEnabled, setIsBundlePortalApiEnabled] = useState(bundlePortalApiEnabled);
   const [isToggling, setIsToggling] = useState(false);
   const [isCodeCraftToggling, setIsCodeCraftToggling] = useState(false);
@@ -86,6 +89,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isDataEasyToggling, setIsDataEasyToggling] = useState(false);
   const [isDataFlowToggling, setIsDataFlowToggling] = useState(false);
   const [isBundlePortalMtnToggling, setIsBundlePortalMtnToggling] = useState(false);
+  const [isBundlePortalMtn3Toggling, setIsBundlePortalMtn3Toggling] = useState(false);
   const [isBundlePortalToggling, setIsBundlePortalToggling] = useState(false);
 
   const handleApiToggle = () => {
@@ -188,6 +192,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       },
       onError: () => {
         setIsBundlePortalMtnToggling(false);
+      },
+    });
+  };
+
+  const handleBundlePortalMtn3ApiToggle = () => {
+    setIsBundlePortalMtn3Toggling(true);
+    router.post(route('admin.bundleportal-mtn3-api.toggle'), {
+      enabled: !isBundlePortalMtn3ApiEnabled,
+    }, {
+      onSuccess: () => {
+        setIsBundlePortalMtn3ApiEnabled(!isBundlePortalMtn3ApiEnabled);
+        setIsBundlePortalMtn3Toggling(false);
+      },
+      onError: () => {
+        setIsBundlePortalMtn3Toggling(false);
       },
     });
   };
@@ -449,6 +468,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                 }`}>
                   {isBundlePortalMtnApiEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
+
+            {/* Bundle Portal MTN3 API Toggle */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white">Bundle Portal Order Pusher MTN3 (MTN3)</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
+                    {isBundlePortalMtn3ApiEnabled ? 'MTN3 orders are being sent to Bundle Portal API' : 'MTN3 orders are not being sent to Bundle Portal API'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleBundlePortalMtn3ApiToggle}
+                  disabled={isBundlePortalMtn3Toggling}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isBundlePortalMtn3ApiEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                  } ${isBundlePortalMtn3Toggling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isBundlePortalMtn3ApiEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="mt-4">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  isBundlePortalMtn3ApiEnabled
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                }`}>
+                  {isBundlePortalMtn3ApiEnabled ? 'Enabled' : 'Disabled'}
                 </span>
               </div>
             </div>

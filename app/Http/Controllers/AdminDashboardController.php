@@ -20,6 +20,7 @@ use App\Services\DataEasyOrderPusherService;
 use App\Services\DataFlowOrderPusherService;
 use App\Services\BundlePortalMtnOrderPusherService;
 use App\Services\BundlePortalOrderPusherService;
+use App\Services\Mtn3BundlePortalOrderPusherService;
 
 class AdminDashboardController extends Controller
 {
@@ -58,6 +59,7 @@ class AdminDashboardController extends Controller
             'dataEasyApiEnabled' => Setting::get('dataeasy_api_enabled', 'false') === 'true',
             'dataFlowApiEnabled' => Setting::get('dataflow_api_enabled', 'false') === 'true',
             'bundlePortalMtnApiEnabled' => Setting::get('bundleportal_mtn_api_enabled', 'false') === 'true',
+            'bundlePortalMtn3ApiEnabled' => Setting::get('bundleportal_mtn3_api_enabled', 'false') === 'true',
             'bundlePortalApiEnabled' => Setting::get('bundleportal_api_enabled', 'false') === 'true',
         ]);
     }
@@ -131,7 +133,13 @@ class AdminDashboardController extends Controller
         }, 'user', 'commission'])->select('orders.*')->latest();
 
         if ($request->filled('network')) {
-            $orders->where('network', 'like', '%' . $request->input('network') . '%');
+            if (strtoupper($request->input('network')) === 'MTN INSTANT') {
+                $orders->whereHas('products', function ($query) {
+                    $query->where('name', 'MTN INSTANT');
+                });
+            } else {
+                $orders->where('network', 'like', '%' . $request->input('network') . '%');
+            }
         }
 
         if ($request->filled('status')) {
@@ -170,6 +178,9 @@ class AdminDashboardController extends Controller
         $dailyCommissions = \App\Models\Commission::whereDate('created_at', $today)->sum('amount');
         $recoveredOrdersCount = Order::whereNotNull('paystack_reference')->count();
         $allNetworks = Order::whereNotNull('network')->distinct()->pluck('network');
+        if (!$allNetworks->contains('MTN INSTANT')) {
+            $allNetworks->push('MTN INSTANT');
+        }
 
         return Inertia::render('Admin/Orders', [
             'orders' => $orders->paginate(50)->withQueryString(),
@@ -326,8 +337,24 @@ class AdminDashboardController extends Controller
     private function pushOrderToEnabledPusher(Order $order)
     {
         try {
-            $isMtn = stripos($order->network ?? '', 'mtn') !== false;
-            if ($isMtn) {
+            $network = strtolower($order->network ?? '');
+            if ($this->isMtn3Order($order)) {
+                if (Setting::get('bundleportal_mtn3_api_enabled', 'false') === 'true') {
+                    (new Mtn3BundlePortalOrderPusherService())->pushOrderToApi($order);
+                } elseif (Setting::get('bundleportal_mtn_api_enabled', 'false') === 'true') {
+                    (new BundlePortalMtnOrderPusherService())->pushOrderToApi($order);
+                } elseif (Setting::get('codecraft_mtn_api_enabled', 'false') === 'true') {
+                    (new CodeCraftMtnOrderPusherService())->pushOrderToApi($order);
+                } elseif (Setting::get('dataflow_api_enabled', 'false') === 'true') {
+                    (new DataFlowOrderPusherService())->pushOrderToApi($order);
+                } elseif (Setting::get('dataeasy_api_enabled', 'false') === 'true') {
+                    (new DataEasyOrderPusherService())->pushOrderToApi($order);
+                } elseif (Setting::get('prodataworld_api_enabled', 'false') === 'true') {
+                    (new ProdataWorldOrderPusherService())->pushOrderToApi($order);
+                } else {
+                    (new OrderPusherService())->pushOrderToApi($order);
+                }
+            } elseif (stripos($network, 'mtn') !== false) {
                 if (Setting::get('bundleportal_mtn_api_enabled', 'false') === 'true') {
                     (new BundlePortalMtnOrderPusherService())->pushOrderToApi($order);
                 } elseif (Setting::get('codecraft_mtn_api_enabled', 'false') === 'true') {
@@ -827,6 +854,39 @@ class AdminDashboardController extends Controller
         Setting::set('bundleportal_mtn_api_enabled', $request->enabled ? 'true' : 'false');
 
         return redirect()->back()->with('success', 'Bundle Portal MTN API status updated successfully.');
+    }
+
+    /**
+     * Toggle Bundle Portal MTN3 API status.
+     */
+    public function toggleBundlePortalMtn3Api(Request $request)
+    {
+        $request->validate([
+            'enabled' => 'required|boolean',
+        ]);
+
+        Setting::set('bundleportal_mtn3_api_enabled', $request->enabled ? 'true' : 'false');
+
+        return redirect()->back()->with('success', 'Bundle Portal MTN3 API status updated successfully.');
+    }
+
+    private function isMtn3Order($order)
+    {
+        $network = strtolower($order->network ?? '');
+        if (stripos($network, 'mtn3') !== false) {
+            return true;
+        }
+
+        $productNames = $order->products()->pluck('name')->all();
+
+        foreach ($productNames as $productName) {
+            $name = strtolower((string) $productName);
+            if (stripos($name, 'mtn3') !== false || preg_match('/\bmtn\b.*\binstant\b|\binstant\b.*\bmtn\b/i', $name)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

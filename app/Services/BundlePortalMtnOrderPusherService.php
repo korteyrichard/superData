@@ -135,12 +135,22 @@ class BundlePortalMtnOrderPusherService
                 'Content-Type' => 'application/json',
                 'Accept'       => 'application/json',
             ])->timeout(30)->post($this->baseUrl, [
-                'action'    => 'check_order',
+                'action'    => 'check_status',
                 'reference' => $reference,
             ]);
 
             if ($response->successful()) {
                 return $response->json();
+            }
+
+            if ($response->status() === 429) {
+                $data = $response->json();
+                Log::warning('Bundle Portal MTN status check is rate limited', [
+                    'reference' => $reference,
+                    'retry_after' => $data['retry_after'] ?? null,
+                    'response' => $data,
+                ]);
+                return null;
             }
 
             Log::warning('Bundle Portal order status check failed', [

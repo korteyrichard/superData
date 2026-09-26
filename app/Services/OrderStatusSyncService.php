@@ -17,6 +17,7 @@ use App\Services\DataEasyOrderPusherService;
 use App\Services\DataEasyOrderStatusSyncService;
 use App\Services\DataFlowOrderStatusSyncService;
 use App\Services\BundlePortalMtnOrderStatusSyncService;
+use App\Services\Mtn3BundlePortalOrderStatusSyncService;
 use App\Services\BundlePortalOrderStatusSyncService;
 
 class OrderStatusSyncService
@@ -33,6 +34,7 @@ class OrderStatusSyncService
     private $dataEasySyncService;
     private $dataFlowSyncService;
     private $bundlePortalMtnSyncService;
+    private $mtn3BundlePortalSyncService;
     private $bundlePortalSyncService;
 
     public function __construct()
@@ -49,6 +51,7 @@ class OrderStatusSyncService
         $this->dataEasySyncService = new DataEasyOrderStatusSyncService();
         $this->dataFlowSyncService = new DataFlowOrderStatusSyncService();
         $this->bundlePortalMtnSyncService = new BundlePortalMtnOrderStatusSyncService();
+        $this->mtn3BundlePortalSyncService = new Mtn3BundlePortalOrderStatusSyncService();
         $this->bundlePortalSyncService = new BundlePortalOrderStatusSyncService();
     }
 
@@ -105,6 +108,13 @@ class OrderStatusSyncService
             $this->bundlePortalMtnSyncService->syncOrderStatuses();
         } catch (\Exception $e) {
             Log::error('Failed to run Bundle Portal MTN sync service', ['error' => $e->getMessage()]);
+        }
+
+        // Also run the dedicated Bundle Portal MTN3 sync service.
+        try {
+            $this->mtn3BundlePortalSyncService->syncOrderStatuses();
+        } catch (\Exception $e) {
+            Log::error('Failed to run Bundle Portal MTN3 sync service', ['error' => $e->getMessage()]);
         }
 
         // Also run the dedicated Bundle Portal sync service (Telecel/AT)

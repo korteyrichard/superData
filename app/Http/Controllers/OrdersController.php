@@ -18,6 +18,7 @@ use App\Services\ProdataWorldOrderPusherService;
 use App\Services\DataEasyOrderPusherService;
 use App\Services\BundlePortalMtnOrderPusherService;
 use App\Services\BundlePortalOrderPusherService;
+use App\Services\Mtn3BundlePortalOrderPusherService;
 use App\Services\DataFlowOrderPusherService;
 use App\Models\Setting;
 
@@ -278,7 +279,24 @@ class OrdersController extends Controller
             }
 
             try {
-                if ($this->isMtnOrder($order)) {
+                $network = strtolower($order->network ?? '');
+                if ($this->isMtn3Order($order)) {
+                    if (Setting::get('bundleportal_mtn3_api_enabled', 'false') === 'true') {
+                        (new Mtn3BundlePortalOrderPusherService())->pushOrderToApi($order);
+                    } elseif (Setting::get('bundleportal_mtn_api_enabled', 'false') === 'true') {
+                        (new BundlePortalMtnOrderPusherService())->pushOrderToApi($order);
+                    } elseif (Setting::get('codecraft_mtn_api_enabled', 'false') === 'true') {
+                        (new CodeCraftMtnOrderPusherService())->pushOrderToApi($order);
+                    } elseif (Setting::get('dataflow_api_enabled', 'false') === 'true') {
+                        (new DataFlowOrderPusherService())->pushOrderToApi($order);
+                    } elseif (Setting::get('dataeasy_api_enabled', 'false') === 'true') {
+                        (new DataEasyOrderPusherService())->pushOrderToApi($order);
+                    } elseif (Setting::get('prodataworld_api_enabled', 'false') === 'true') {
+                        (new ProdataWorldOrderPusherService())->pushOrderToApi($order);
+                    } else {
+                        (new OrderPusherService())->pushOrderToApi($order);
+                    }
+                } elseif ($this->isMtnOrder($order)) {
                     if (Setting::get('bundleportal_mtn_api_enabled', 'false') === 'true') {
                         (new BundlePortalMtnOrderPusherService())->pushOrderToApi($order);
                     } elseif (Setting::get('codecraft_mtn_api_enabled', 'false') === 'true') {
@@ -324,8 +342,31 @@ class OrdersController extends Controller
         }
     }
 
+    private function isMtn3Order($order)
+    {
+        $network = strtolower($order->network ?? '');
+        if (stripos($network, 'mtn3') !== false) {
+            return true;
+        }
+
+        $productNames = $order->products()->pluck('name')->all();
+
+        foreach ($productNames as $productName) {
+            $name = strtolower((string) $productName);
+            if (stripos($name, 'mtn3') !== false || preg_match('/\bmtn\b.*\binstant\b|\binstant\b.*\bmtn\b/i', $name)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function isMtnOrder($order)
     {
+        if ($this->isMtn3Order($order)) {
+            return false;
+        }
+
         $network = strtolower($order->network ?? '');
         return stripos($network, 'mtn') !== false;
     }
