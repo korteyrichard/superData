@@ -13,8 +13,13 @@ class Mtn3BundlePortalOrderPusherService
 
     public function __construct()
     {
-        $this->baseUrl = config('services.bundleportal.base_url', 'https://api.bundleportal.com/v1');
+        $this->baseUrl = config('services.bundleportal.base_url', 'https://api.bundleportal.com/v2');
         $this->apiKey  = config('services.bundleportal.api_key', '');
+    }
+
+    public function getBaseUrl(): string
+    {
+        return $this->baseUrl;
     }
 
     public function pushOrderToApi(Order $order): void

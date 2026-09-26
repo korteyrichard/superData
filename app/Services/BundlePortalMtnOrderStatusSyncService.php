@@ -20,29 +20,10 @@ class BundlePortalMtnOrderStatusSyncService
 
     public function syncOrderStatuses(): void
     {
-        $orders = Order::whereIn('status', ['pending', 'processing'])
-            ->whereNotNull('reference_id')
-            ->where(function ($query) {
-                $query->where('reference_id', 'like', 'KT-%')
-                    ->orWhere('reference_id', 'like', 'SD-%');
-            })
-            ->where('reference_id', 'not like', 'SD-MTN3-%')
-            ->whereRaw('LOWER(network) LIKE ?', ['%mtn%'])
-            ->with('user')
-            ->get();
-
-        Log::info('Bundle Portal MTN sync: found ' . $orders->count() . ' orders to check');
-
-        foreach ($orders as $order) {
-            try {
-                $this->syncOrder($order);
-            } catch (\Exception $e) {
-                Log::error('Failed to sync Bundle Portal MTN order status', [
-                    'order_id' => $order->id,
-                    'error'    => $e->getMessage(),
-                ]);
-            }
-        }
+        Log::warning('Bundle Portal MTN v2 no longer supports polling; status updates must arrive via webhook.', [
+            'reason' => 'polling_disabled',
+            'endpoint' => $this->pusherService->getBaseUrl(),
+        ]);
     }
 
     private function syncOrder(Order $order): void

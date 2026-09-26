@@ -10,44 +10,43 @@ class WebhookController extends Controller
 {
     public function handleOrderStatus(Request $request)
     {
-        // Log all incoming webhook requests for debugging
+        $payload = $request->getContent();
+        $signature = $request->header('X-BundlePortal-Signature', $request->header('X-Webhook-Signature'));
+        $secret = config('services.bundleportal.webhook_secret', env('WEBHOOK_SECRET', ''));
+
         Log::info('WEBHOOK RECEIVED', [
             'method' => $request->method(),
             'url' => $request->fullUrl(),
             'headers' => $request->headers->all(),
-            'body' => $request->getContent(),
+            'body' => $payload,
             'ip' => $request->ip(),
-            'timestamp' => now()
+            'timestamp' => now(),
+            'signature_present' => !empty($signature),
+            'secret_present' => !empty($secret),
         ]);
-        
-        $payload = $request->getContent();
-        $signature = $request->header('X-Webhook-Signature');
-        $secret = env('WEBHOOK_SECRET', 'fd93ce342f0b1782bed029481943428f');
-        
-        // Log signature verification details
-        Log::info('Webhook signature verification', [
-            'received_signature' => $signature,
-            'payload_length' => strlen($payload),
-            'secret_configured' => !empty($secret)
-        ]);
-        
-        // Verify webhook signature if provided
-        if ($signature && env('WEBHOOK_REQUIRE_SIGNATURE', false)) {
-            $expected = hash_hmac('sha256', $payload, $secret);
-            
+
+        if (empty($secret)) {
+            Log::warning('Bundle Portal webhook secret missing; rejecting request.', [
+                'signature' => $signature,
+            ]);
+            return response()->json(['error' => 'Webhook secret not configured'], 401);
+        }
+
+        if (!empty($signature)) {
+            $expected = 'sha256=' . hash_hmac('sha256', $payload, $secret);
+
             if (!hash_equals($expected, $signature)) {
-                Log::warning('Invalid webhook signature', [
-                    'signature' => $signature, 
+                Log::warning('Invalid Bundle Portal webhook signature', [
+                    'received' => $signature,
                     'expected' => $expected,
-                    'payload' => $payload
                 ]);
                 return response()->json(['error' => 'Invalid signature'], 401);
             }
-            Log::info('Webhook signature verified successfully');
-        } elseif ($signature) {
-            Log::info('Webhook signature provided but verification disabled');
         } else {
-            Log::info('No webhook signature provided - proceeding without verification');
+            Log::warning('Bundle Portal webhook signature missing', [
+                'payload' => $payload,
+            ]);
+            return response()->json(['error' => 'Missing signature'], 401);
         }
         
         $data = json_decode($payload, true);
@@ -59,20 +58,17 @@ class WebhookController extends Controller
         
         Log::info('Webhook payload decoded', ['data' => $data]);
         
-        // Handle different payload structures - be very flexible
         $order = null;
         $orderIdentifier = null;
-        
-        // Try multiple ways to find the order
+
         $searchMethods = [
-            // Method 1: By reference_id
-            ['field' => 'reference_id', 'value' => $data['reference_id'] ?? null],
-            // Method 2: By order_id as reference_id
+            ['field' => 'reference_id', 'value' => $data['reference'] ?? null],
             ['field' => 'reference_id', 'value' => $data['order_id'] ?? null],
-            // Method 3: By direct order ID
+            ['field' => 'reference_id', 'value' => $data['reference_id'] ?? null],
+            ['field' => 'reference_id', 'value' => $data['id'] ?? null],
             ['field' => 'id', 'value' => $data['order_id'] ?? null],
-            // Method 4: By any numeric identifier
-            ['field' => 'id', 'value' => $data['id'] ?? null]
+            ['field' => 'id', 'value' => $data['reference'] ?? null],
+            ['field' => 'id', 'value' => $data['id'] ?? null],
         ];
         
         foreach ($searchMethods as $method) {

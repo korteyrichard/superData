@@ -20,34 +20,10 @@ class BundlePortalOrderStatusSyncService
 
     public function syncOrderStatuses(): void
     {
-        $orders = Order::whereIn('status', ['pending', 'processing'])
-            ->whereNotNull('reference_id')
-            ->where(function ($query) {
-                $query->where('reference_id', 'like', 'KT-%')
-                    ->orWhere('reference_id', 'like', 'SD-%');
-            })
-            ->where(function ($q) {
-                $q->whereRaw('LOWER(network) LIKE ?', ['%telecel%'])
-                  ->orWhereRaw('LOWER(network) LIKE ?', ['%at data%'])
-                  ->orWhereRaw('LOWER(network) LIKE ?', ['%at (%'])
-                  ->orWhereRaw('LOWER(network) LIKE ?', ['%airteltigo%'])
-                  ->orWhereRaw('LOWER(network) LIKE ?', ['%ishare%']);
-            })
-            ->with('user')
-            ->get();
-
-        Log::info('Bundle Portal sync (Telecel/AT): found ' . $orders->count() . ' orders to check');
-
-        foreach ($orders as $order) {
-            try {
-                $this->syncOrder($order);
-            } catch (\Exception $e) {
-                Log::error('Failed to sync Bundle Portal order status (Telecel/AT)', [
-                    'order_id' => $order->id,
-                    'error'    => $e->getMessage(),
-                ]);
-            }
-        }
+        Log::warning('Bundle Portal v2 no longer supports polling; status updates must arrive via webhook.', [
+            'reason' => 'polling_disabled',
+            'endpoint' => $this->pusherService->getBaseUrl(),
+        ]);
     }
 
     private function syncOrder(Order $order): void

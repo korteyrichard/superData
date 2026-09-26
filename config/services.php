@@ -68,8 +68,9 @@ return [
     ],
 
     'bundleportal' => [
-        'base_url' => env('BUNDLEPORTAL_BASE_URL', 'https://api.bundleportal.com/v1'),
+        'base_url' => env('BUNDLEPORTAL_BASE_URL', 'https://api.bundleportal.com/v2'),
         'api_key'  => env('BUNDLEPORTAL_API_KEY', ''),
+        'webhook_secret' => env('WEBHOOK_SECRET', ''),
     ],
 
 ];
