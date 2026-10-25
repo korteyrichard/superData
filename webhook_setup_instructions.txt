@@ -1,37 +1,42 @@
-# Webhook Setup Instructions
+BundlePortal API v2 Webhooks
+===========================
 
-## Problem
-Your main site cannot reach http://localhost:8001 because localhost is only accessible on the same machine.
+Callback endpoint
+-----------------
 
-## Solution: Use ngrok to expose your local server
+POST https://superdatagh.com/bundleportal/orders
 
-1. **Install ngrok:**
-   - Download from: https://ngrok.com/
-   - Or install via: `winget install ngrok.ngrok`
+The route accepts BundlePortal final order events:
 
-2. **Expose your Laravel app:**
-   ```bash
-   ngrok http 8001
-   ```
+- order.completed -> completed
+- order.failed -> failed
+- order.cancelled -> cancelled
+- order.refunded -> refunded
 
-3. **Copy the public URL:**
-   - ngrok will show something like: https://abc123.ngrok.io
-   - Your webhook URL becomes: https://abc123.ngrok.io/api/webhook/status
+BundlePortal status updates are delivered by webhook; the v2 status polling
+command does not poll the API.
 
-4. **Update your main site webhook configuration:**
-   - Replace: http://localhost:8001/webhook/status
-   - With: https://abc123.ngrok.io/api/webhook/status
+Registering or rotating the webhook
+-----------------------------------
 
-## Alternative Solution: Deploy to a public server
+Set APP_URL to the public HTTPS site and BUNDLEPORTAL_API_KEY in .env, then run:
 
-If you have a public server, deploy your Laravel app there and use:
-- https://yourdomain.com/api/webhook/status
+    php artisan bundleportal:register-webhook
 
-## Testing
+Pass --url=https://your-domain/bundleportal/orders to register another public
+HTTPS URL. The command calls BundlePortal's set_webhook action and saves the
+one-time response secret to BUNDLEPORTAL_WEBHOOK_SECRET in .env without
+printing it. Running the command again may rotate the secret; use it only when
+you intend to register or rotate the webhook.
 
-Use the debug endpoint to test connectivity:
-- https://abc123.ngrok.io/api/webhook/debug
+Signature verification
+----------------------
 
-## Current webhook endpoints:
-- POST /api/webhook/status - Main webhook handler
-- ANY /api/webhook/debug - Debug endpoint (logs all requests)
+The handler reads BUNDLEPORTAL_WEBHOOK_SECRET (falling back to the legacy
+WEBHOOK_SECRET) and checks X-BundlePortal-Signature against the raw request
+body using the sha256=<hex HMAC-SHA256> format currently implemented by the
+app. Invalid or missing signatures are rejected before the order is changed.
+
+After adding or changing the secret, clear Laravel's config cache with:
+
+    php artisan config:clear

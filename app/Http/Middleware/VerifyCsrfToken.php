@@ -14,6 +14,7 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'api/webhook/*',
         'webhook/*',
+        'bundleportal/orders',
         'dashboard/verify-number',
     ];
 }

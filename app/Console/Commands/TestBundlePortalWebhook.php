@@ -7,17 +7,17 @@ use Illuminate\Support\Facades\Http;
 
 class TestBundlePortalWebhook extends Command
 {
-    protected $signature = 'bundleportal:test-webhook {--url=http://127.0.0.1:8000/api/webhook/status} {--secret=} {--order-id=test-order-001} {--status=completed} {--event=order.completed}';
+    protected $signature = 'bundleportal:test-webhook {--url=http://127.0.0.1:8000/bundleportal/orders} {--secret=} {--order-id=test-order-001} {--status=completed} {--event=order.completed}';
 
     protected $description = 'Send a signed Bundle Portal v2 webhook payload to validate the callback signature and route.';
 
     public function handle(): int
     {
         $url = $this->option('url');
-        $secret = $this->option('secret') ?: env('WEBHOOK_SECRET', config('services.bundleportal.webhook_secret', ''));
+        $secret = $this->option('secret') ?: config('services.bundleportal.webhook_secret', '');
 
         if (empty($secret)) {
-            $this->error('No webhook secret configured. Provide --secret or set WEBHOOK_SECRET.');
+            $this->error('No webhook secret configured. Set BUNDLEPORTAL_WEBHOOK_SECRET in .env.');
             return 1;
         }
 
@@ -39,14 +39,12 @@ class TestBundlePortalWebhook extends Command
 
         $this->info('Sending signed Bundle Portal webhook test request...');
         $this->line('URL: ' . $url);
-        $this->line('Signature: ' . $signature);
-
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'X-BundlePortal-Signature' => $signature,
                 'Accept' => 'application/json',
-            ])->post($url, $payload);
+            ])->withBody($body, 'application/json')->post($url);
 
             $this->line('HTTP status: ' . $response->status());
             $this->line('Response body: ' . $response->body());

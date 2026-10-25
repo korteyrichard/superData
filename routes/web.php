@@ -195,17 +195,7 @@ require __DIR__.'/debug.php'; // Temporary debug routes
 
 // Webhook routes (accessible without /api/ prefix)
 Route::post('/webhook/status', [\App\Http\Controllers\WebhookController::class, 'handleOrderStatus']);
-Route::any('/webhook/debug', function(\Illuminate\Http\Request $request) {
-    \Log::info('WEB DEBUG: Webhook endpoint hit', [
-        'method' => $request->method(),
-        'url' => $request->fullUrl(),
-        'headers' => $request->headers->all(),
-        'body' => $request->getContent(),
-        'ip' => $request->ip(),
-        'user_agent' => $request->userAgent()
-    ]);
-    return response()->json(['status' => 'received from web routes', 'timestamp' => now()]);
-});
+Route::post('/bundleportal/orders', [\App\Http\Controllers\WebhookController::class, 'handleOrderStatus']);
 
 // DEBUG SHOP ROUTE - REMOVE AFTER TESTING
 Route::get('/debug-shops', function() {

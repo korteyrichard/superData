@@ -26,6 +26,47 @@ class BundlePortalOrderStatusSyncService
         ]);
     }
 
+    public function applyWebhookStatus(Order $order, string $externalStatus): ?string
+    {
+        $newStatus = $this->mapStatus($externalStatus);
+
+        if (!$newStatus || $newStatus === $order->status) {
+            return $newStatus;
+        }
+
+        $oldStatus = $order->status;
+        $order->update(['status' => $newStatus]);
+
+        Log::info('Bundle Portal webhook updated order status', [
+            'order_id' => $order->id,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'provider_status' => $externalStatus,
+        ]);
+
+        if ($newStatus === 'completed') {
+            if ($order->user && $order->user->phone) {
+                try {
+                    $this->smsService->sendSms(
+                        $order->user->phone,
+                        "Your {$order->network} order #{$order->id} to {$order->beneficiary_number} has been completed successfully. Thank you!"
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Failed to send SMS for Bundle Portal order', [
+                        'order_id' => $order->id,
+                        'exception' => get_class($e),
+                    ]);
+                }
+            }
+
+            $this->commissionService->makeCommissionAvailable($order);
+        } elseif (in_array($newStatus, ['failed', 'cancelled', 'refunded'], true)) {
+            $this->commissionService->reverseCommission($order);
+        }
+
+        return $newStatus;
+    }
+
     private function syncOrder(Order $order): void
     {
         $reference    = $order->reference_id;
@@ -95,8 +136,9 @@ class BundlePortalOrderStatusSyncService
             'completed'  => 'completed',
             'delivered'  => 'completed',
             'successful' => 'completed',
-            'failed'     => 'cancelled',
+            'failed'     => 'failed',
             'cancelled'  => 'cancelled',
+            'refunded'   => 'refunded',
         ];
 
         return $map[strtolower($externalStatus)] ?? null;

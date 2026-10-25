@@ -374,7 +374,9 @@ export default function AdminOrders() {
                 <option value="pending">Pending</option>
                 <option value="processing">Processing</option>
                 <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
                 <option value="cancelled">Cancelled</option>
+                <option value="refunded">Refunded</option>
               </select>
             </div>
             <div>
@@ -464,7 +466,9 @@ export default function AdminOrders() {
                             <option value="pending">Pending</option>
                             <option value="processing">Processing</option>
                             <option value="completed">Completed</option>
+                            {order.status === 'failed' && <option value="failed" disabled>Failed (BundlePortal)</option>}
                             <option value="cancelled">Cancelled</option>
+                            {order.status === 'refunded' && <option value="refunded" disabled>Refunded (BundlePortal)</option>}
                         </select>
                       </td>
                       <td className="px-3 sm:px-5 py-3 sm:py-4">

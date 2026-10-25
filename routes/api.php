@@ -20,18 +20,6 @@ Route::get('/test', function () {
 
 // Webhook routes (no authentication required)
 Route::post('/webhook/status', [WebhookController::class, 'handleOrderStatus']);
-Route::any('/webhook/debug', function(\Illuminate\Http\Request $request) {
-    \Log::info('DEBUG: Webhook endpoint hit', [
-        'method' => $request->method(),
-        'url' => $request->fullUrl(),
-        'headers' => $request->headers->all(),
-        'body' => $request->getContent(),
-        'ip' => $request->ip(),
-        'user_agent' => $request->userAgent()
-    ]);
-    return response()->json(['status' => 'received', 'timestamp' => now()]);
-});
-Route::post('/api/webhook/status', [WebhookController::class, 'handleOrderStatus']);
 Route::get('/webhook/test', function() {
     return response()->json([
         'message' => 'Webhook endpoint is accessible',
