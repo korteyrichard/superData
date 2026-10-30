@@ -149,8 +149,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->name('admin.')->group(fun
     Route::post('admin/products', [\App\Http\Controllers\AdminDashboardController::class, 'storeProduct'])->name('products.store');
     Route::put('admin/products/{product}', [\App\Http\Controllers\AdminDashboardController::class, 'updateProduct'])->name('products.update');
     Route::delete('admin/products/{product}', [\App\Http\Controllers\AdminDashboardController::class, 'deleteProduct'])->name('products.delete');
-    Route::post('admin/products/mtn/out-of-stock', [\App\Http\Controllers\AdminDashboardController::class, 'bulkMtnOutOfStock'])->name('products.mtn.out-of-stock');
-    Route::post('admin/products/mtn/in-stock', [\App\Http\Controllers\AdminDashboardController::class, 'bulkMtnInStock'])->name('products.mtn.in-stock');
+    Route::post('admin/products/{category}/toggle-stock', [\App\Http\Controllers\AdminDashboardController::class, 'toggleProductCategoryStock'])->name('products.category.toggle-stock');
     Route::get('admin/orders', [\App\Http\Controllers\AdminDashboardController::class, 'orders'])->name('orders');
     Route::delete('admin/orders/{order}', [\App\Http\Controllers\AdminDashboardController::class, 'deleteOrder'])->name('orders.delete');
     Route::put('admin/orders/{order}/status', [\App\Http\Controllers\AdminDashboardController::class, 'updateOrderStatus'])->name('orders.updateStatus');

@@ -73,7 +73,7 @@ export default function Dashboard({ auth }: DashboardProps) {
   const verifyResult = flash?.verify_result ?? null;
 
   const getProductTabLabel = (product: Product) => {
-    const productName = (product.name ?? '').trim();
+    const productName = (product.name ?? '').trim().replace(/\s+/g, ' ');
 
     if (productName.toUpperCase() === 'MTN INSTANT') {
       return 'MTN INSTANT';
@@ -82,7 +82,7 @@ export default function Dashboard({ auth }: DashboardProps) {
     return product.network;
   };
 
-  const productTabs = Array.from(new Set(products.map(getProductTabLabel)));
+  const productTabs = Array.from(new Set([...products.map(getProductTabLabel), 'MTN INSTANT']));
   const safeActiveTab = productTabs.includes(activeTab) ? activeTab : (productTabs[0] ?? 'MTN');
 
   const filteredPackages = products.filter(pkg => getProductTabLabel(pkg) === safeActiveTab);
@@ -386,7 +386,7 @@ export default function Dashboard({ auth }: DashboardProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {filteredPackages.map((data: Product, index) => (
                     <div key={`${data.network}-${index}`} className="transform transition-all duration-300 hover:-translate-y-1">
-                      {data.network === 'MTN' ? (
+                      {getProductTabLabel(data) === 'MTN INSTANT' || data.network === 'MTN' ? (
                         <MTNCard
                           name={data.name}
                           quantity={data.quantity}

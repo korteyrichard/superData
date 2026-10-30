@@ -18,12 +18,14 @@ interface Product {
 interface AdminProductsProps extends PageProps {
   products: Product[];
   filterNetwork: string;
+  stockToggleStates: Record<string, 'IN STOCK' | 'OUT OF STOCK' | 'NO PRODUCTS'>;
 }
 
 export default function AdminProducts({
   auth,
   products,
   filterNetwork: initialFilterNetwork,
+  stockToggleStates,
 }: AdminProductsProps) {
   const [filterNetwork, setFilterNetwork] = useState(initialFilterNetwork);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
@@ -53,7 +55,7 @@ export default function AdminProducts({
       onSuccess: () => {
         reset();
         setShowAddProductModal(false);
-        router.reload({ only: ['products'] });
+        router.reload({ only: ['products', 'stockToggleStates'] });
       },
     });
   };
@@ -82,7 +84,7 @@ export default function AdminProducts({
         reset();
         setShowEditProductModal(false);
         setSelectedProduct(null);
-        router.reload({ only: ['products'] });
+        router.reload({ only: ['products', 'stockToggleStates'] });
       },
     });
   };
@@ -91,31 +93,30 @@ export default function AdminProducts({
     if (confirm('Are you sure you want to delete this product?')) {
       destroy(route('admin.products.delete', product.id), {
         onSuccess: () => {
-          router.reload({ only: ['products'] });
+          router.reload({ only: ['products', 'stockToggleStates'] });
         },
       });
     }
   };
 
-  const handleMtnOutOfStock = () => {
-    if (confirm('Are you sure you want to set ALL MTN products OUT OF STOCK at once?')) {
-      router.post(route('admin.products.mtn.out-of-stock'), {}, {
+  const handleStockToggle = (category: string, label: string, currentStatus: string) => {
+    const targetStatus = currentStatus === 'IN STOCK' ? 'OUT OF STOCK' : 'IN STOCK';
+    if (currentStatus !== 'NO PRODUCTS' && confirm(`Set all ${label} products to ${targetStatus}?`)) {
+      router.post(route('admin.products.category.toggle-stock', { category }), {}, {
         onSuccess: () => {
-          router.reload({ only: ['products'] });
+          router.reload({ only: ['products', 'stockToggleStates'] });
         },
       });
     }
   };
 
-  const handleMtnInStock = () => {
-    if (confirm('Are you sure you want to set ALL MTN products IN STOCK at once?')) {
-      router.post(route('admin.products.mtn.in-stock'), {}, {
-        onSuccess: () => {
-          router.reload({ only: ['products'] });
-        },
-      });
-    }
-  };
+  const stockCategories = [
+    { key: 'mtn', label: 'MTN' },
+    { key: 'mtn-instant', label: 'MTN Instant' },
+    { key: 'at-instant', label: 'AT Data (Instant)' },
+    { key: 'at-big-packages', label: 'AT (Big Packages)' },
+    { key: 'telecel', label: 'Telecel' },
+  ];
 
   return (
     <AdminLayout
@@ -128,19 +129,25 @@ export default function AdminProducts({
         <div className="bg-white dark:bg-gray-900 shadow rounded-xl p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white">Product List</h3>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <button
-                onClick={handleMtnInStock}
-                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-              >
-                MTN In Stock
-              </button>
-              <button
-                onClick={handleMtnOutOfStock}
-                className="w-full sm:w-auto px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2"
-              >
-                MTN Out of Stock
-              </button>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full sm:w-auto">
+              {stockCategories.map(({ key, label }) => {
+                const status = stockToggleStates[key] ?? 'NO PRODUCTS';
+                const targetStatus = status === 'IN STOCK' ? 'OUT OF STOCK' : 'IN STOCK';
+
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="switch"
+                    aria-checked={status === 'IN STOCK'}
+                    disabled={status === 'NO PRODUCTS'}
+                    onClick={() => handleStockToggle(key, label, status)}
+                    className={`w-full sm:w-auto px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${status === 'IN STOCK' ? 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-400' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500'}`}
+                  >
+                    {label}: Set {targetStatus}
+                  </button>
+                );
+              })}
               <button
                 onClick={() => setShowAddProductModal(true)}
                 className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"

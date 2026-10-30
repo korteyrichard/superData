@@ -45,7 +45,10 @@ class DealerWebController extends Controller
             ->get();
 
         $availableProducts = Product::where('status', 'IN STOCK')
-            ->where('product_type', 'dealer_product')
+            ->where(function ($query) {
+                $query->where('product_type', 'dealer_product')
+                    ->orWhereRaw("UPPER(REPLACE(TRIM(name), ' ', '')) = ?", ['MTNINSTANT']);
+            })
             ->whereNotIn('id', $dealerProducts->pluck('product_id'))
             ->get();
 

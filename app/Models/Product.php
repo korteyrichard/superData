@@ -52,17 +52,23 @@ class Product extends Model
 
     public function scopeForRole($query, $role)
     {
-        switch ($role) {
-            case 'dealer':
-                return $query->forDealers();
-            case 'agent':
-                return $query->forAgents();
-            case 'customer':
-                return $query->forCustomers();
-            case 'elite':
-                return $query->forElite();
-            default:
-                return $query; // Admin sees all
+        $productType = match ($role) {
+            'dealer' => 'dealer_product',
+            'agent' => 'agent_product',
+            'customer' => 'customer_product',
+            'elite' => 'elite_product',
+            default => null,
+        };
+
+        if ($productType === null) {
+            return $query; // Admin sees all
         }
+
+        return $query->where(function ($roleProducts) use ($productType) {
+            $roleProducts->where('product_type', $productType)
+                ->orWhere(function ($instantProduct) {
+                    $instantProduct->whereRaw("LOWER(REPLACE(TRIM(name), ' ', '')) = ?", ['mtninstant']);
+                });
+        });
     }
 }

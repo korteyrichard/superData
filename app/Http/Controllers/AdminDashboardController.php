@@ -120,6 +120,13 @@ class AdminDashboardController extends Controller
         return Inertia::render('Admin/Products', [
             'products' => $products->get(),
             'filterNetwork' => $request->input('network', ''),
+            'stockToggleStates' => [
+                'mtn' => $this->productCategoryStockState('mtn'),
+                'mtn-instant' => $this->productCategoryStockState('mtn-instant'),
+                'at-instant' => $this->productCategoryStockState('at-instant'),
+                'at-big-packages' => $this->productCategoryStockState('at-big-packages'),
+                'telecel' => $this->productCategoryStockState('telecel'),
+            ],
         ]);
     }
 
@@ -672,30 +679,51 @@ class AdminDashboardController extends Controller
         return redirect()->route('admin.products');
     }
 
-    /**
-     * Set all MTN products out of stock at once.
-     */
-    public function bulkMtnOutOfStock()
+    public function toggleProductCategoryStock(string $category)
     {
-        $count = Product::where('network', 'like', '%MTN%')
+        $hasInStockProducts = $this->productsForStockCategory($category)
             ->where('status', 'IN STOCK')
-            ->update(['status' => 'OUT OF STOCK']);
+            ->exists();
+        $targetStatus = $hasInStockProducts ? 'OUT OF STOCK' : 'IN STOCK';
+        $count = $this->productsForStockCategory($category)
+            ->update(['status' => $targetStatus]);
+        $label = match ($category) {
+            'mtn' => 'MTN',
+            'mtn-instant' => 'MTN Instant',
+            'at-instant' => 'AT Data (Instant)',
+            'at-big-packages' => 'AT (Big Packages)',
+            'telecel' => 'Telecel',
+            default => abort(404),
+        };
 
         return redirect()->route('admin.products')
-            ->with('success', "{$count} MTN product(s) set to OUT OF STOCK.");
+            ->with('success', "{$count} {$label} product(s) set to {$targetStatus}.");
     }
 
-    /**
-     * Set all MTN products in stock at once.
-     */
-    public function bulkMtnInStock()
+    private function productsForStockCategory(string $category)
     {
-        $count = Product::where('network', 'like', '%MTN%')
-            ->where('status', 'OUT OF STOCK')
-            ->update(['status' => 'IN STOCK']);
+        return match ($category) {
+            'mtn' => Product::whereRaw('UPPER(TRIM(network)) = ?', ['MTN'])
+                ->whereRaw("UPPER(REPLACE(TRIM(name), ' ', '')) <> ?", ['MTNINSTANT']),
+            'mtn-instant' => Product::whereRaw("UPPER(REPLACE(TRIM(name), ' ', '')) = ?", ['MTNINSTANT']),
+            'at-instant' => Product::whereRaw('UPPER(TRIM(network)) = ?', ['AT DATA (INSTANT)']),
+            'at-big-packages' => Product::whereRaw('UPPER(TRIM(network)) = ?', ['AT (BIG PACKAGES)']),
+            'telecel' => Product::whereRaw('UPPER(TRIM(network)) = ?', ['TELECEL']),
+            default => abort(404),
+        };
+    }
 
-        return redirect()->route('admin.products')
-            ->with('success', "{$count} MTN product(s) set to IN STOCK.");
+    private function productCategoryStockState(string $category): string
+    {
+        $query = $this->productsForStockCategory($category);
+
+        if (!$query->exists()) {
+            return 'NO PRODUCTS';
+        }
+
+        return $this->productsForStockCategory($category)
+            ->where('status', 'IN STOCK')
+            ->exists() ? 'IN STOCK' : 'OUT OF STOCK';
     }
 
     /**
